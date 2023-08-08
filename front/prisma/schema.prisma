@@ -1,0 +1,111 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider     = "mysql"
+    url          = env("DATABASE_URL")
+    relationMode = "prisma"
+}
+
+model Card {
+    id        String   @id @default(cuid())
+    content   String
+    title     String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    creatorId String
+    creator   User     @relation(fields: [creatorId], references: [id])
+
+    statusId String
+    status   Status @relation(fields: [statusId], references: [id])
+    boardId  String
+    board    Board  @relation(fields: [boardId], references: [id])
+
+    @@index([boardId])
+    @@index([creatorId])
+    @@index([statusId])
+}
+
+model Status {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    name      String
+    color     String
+    Card      Card[]
+}
+
+model Board {
+    id        String   @id @default(cuid())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    cards     Card[]
+
+    teamId String
+    team   Team   @relation(fields: [teamId], references: [id])
+
+    @@index([teamId])
+}
+
+model Team {
+    id        String   @id @default(cuid())
+    name      String
+    createdAt DateTime @default(now())
+
+    adminId   String
+    updatedAt DateTime @updatedAt
+    boards    Board[]
+    users     User[]
+}
+
+// Necessary for Next auth
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? @db.Text
+    session_state     String?
+    user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+    @@index([userId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+}
+
+model User {
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    image         String?
+    accounts      Account[]
+    sessions      Session[]
+    Card          Card[]
+    Team          Team[]
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
