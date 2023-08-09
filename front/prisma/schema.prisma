@@ -49,6 +49,7 @@ model Board {
     @@index([teamId])
 }
 
+
 model Team {
     id        String   @id @default(cuid())
     name      String
