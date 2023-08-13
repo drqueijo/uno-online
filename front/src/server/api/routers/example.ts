@@ -16,17 +16,19 @@ export const exampleRouter = createTRPCRouter({
     }),
 
   getAll: publicProcedure.query(({ ctx }) => {
-    const {prisma} = ctx
-    console.log()
-    console.log(prisma.account.findMany())
-    console.log(prisma.card.findMany())
+    const { prisma } = ctx;
+    console.log();
+    console.log(prisma.account.findMany());
+    console.log(prisma.card.findMany());
     return prisma.team.findMany();
   }),
   createCard: publicProcedure
-    .input(z.object({
-      name: z.string(),
-      adminId: z.string(),
-    })) // Use the Card type from Prisma
+    .input(
+      z.object({
+        name: z.string(),
+        adminId: z.string(),
+      })
+    ) // Use the Card type from Prisma
     .mutation(async ({ input, ctx }) => {
       const { prisma } = ctx;
 

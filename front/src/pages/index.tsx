@@ -1,20 +1,21 @@
-import { inferProcedureInput } from "@trpc/server";
+/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { signIn, signOut, useSession } from "next-auth/react";
+
 import Head from "next/head";
 import Link from "next/link";
-import { AppRouter } from "next/server/api/root";
+
 import { api } from "next/utils/api";
 import { FormEvent } from "react";
-import { z } from "zod";
 
 export default function Home() {
   const hello = api.example.hello.useQuery({ text: "from tRPC" });
-  const example = api.example.getAll.useQuery()
-  console.log(example.data)
-  const addTeam = api.example.createCard.useMutation()
+  const example = api.example.getAll.useQuery();
+  console.log(example.data);
+  const addTeam = api.example.createCard.useMutation();
   const { data: sessionData } = useSession();
-  const onSubmit = async (e:FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     const $form = e.currentTarget;
     const values = Object.fromEntries(new FormData($form));
 
@@ -28,10 +29,10 @@ export default function Home() {
 
       $form.reset();
     } catch (cause) {
-      console.error({ cause }, 'Failed to add post');
+      console.error({ cause }, "Failed to add post");
     }
-  }
-  
+  };
+
   return (
     <>
       <Head>
@@ -77,18 +78,18 @@ export default function Home() {
         </div>
         <form onSubmit={onSubmit}>
           <input
-            className="focus-visible:outline-dashed outline-offset-4 outline-2 outline-gray-700 rounded-xl px-4 py-3 bg-gray-900"
+            className="rounded-xl bg-gray-900 px-4 py-3 outline-2 outline-offset-4 outline-gray-700 focus-visible:outline-dashed"
             id="name"
             name="name"
             type="text"
             placeholder="Name"
             disabled={addTeam.isLoading}
           />
-                        <input
-                className="cursor-pointer bg-gray-900 p-2 rounded-md px-16"
-                type="submit"
-                disabled={addTeam.isLoading}
-              />
+          <input
+            className="cursor-pointer rounded-md bg-gray-900 p-2 px-16"
+            type="submit"
+            disabled={addTeam.isLoading}
+          />
         </form>
       </main>
     </>

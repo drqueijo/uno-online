@@ -3,14 +3,18 @@ import { SessionProvider } from "next-auth/react";
 import { type AppType } from "next/app";
 import { api } from "next/utils/api";
 import "next/styles/globals.css";
+import MainLayout from "next/components/layouts/main";
 
-const MyApp: AppType<{ session: Session | null }> = ({
+
+const MyApp: AppType<{ session: Session | null}> = ({
   Component,
   pageProps: { session, ...pageProps },
 }) => {
   return (
     <SessionProvider session={session}>
-      <Component {...pageProps} />
+      <MainLayout>
+        <Component {...pageProps} />
+      </MainLayout>
     </SessionProvider>
   );
 };
