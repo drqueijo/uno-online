@@ -13,6 +13,9 @@ import {
 } from "@ant-design/icons";
 import { Layout, Menu, Button, theme } from "antd";
 import { signIn, signOut, useSession } from "next-auth/react";
+import LoginPage from "../login";
+import pagesAndRoutes from "next/utils/pagesAndRoutes";
+import { useRouter } from "next/router";
 
 const { Header, Sider, Content } = Layout;
 
@@ -22,14 +25,20 @@ interface MainLayoutProps {
 
 const App: React.FC<MainLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const router = useRouter();
   const {
     token: { colorBgContainer },
   } = theme.useToken();
   const { data: sessionData } = useSession();
-
+  const [selectedMenuItem, setSelectedMenuItem] = useState<string>(
+    router.pathname ?? ""
+  );
+  console.log(router.pathname);
   const handleNavigation = async (e: { key: string }) => {
     if (e.key === "Logout") await signOut();
     if (e.key === "Login") await signIn();
+    setSelectedMenuItem(e.key ?? "");
+    await router.push(e.key);
   };
 
   return (
@@ -44,32 +53,11 @@ const App: React.FC<MainLayoutProps> = ({ children }) => {
           <DingdingOutlined className="m-auto" />
         </div>
         <Menu
+          selectedKeys={[selectedMenuItem]}
           onClick={handleNavigation}
           theme="dark"
           mode="inline"
-          defaultSelectedKeys={["1"]}
-          items={[
-            {
-              key: "1",
-              icon: <UserOutlined />,
-              label: "nav 1",
-            },
-            {
-              key: "2",
-              icon: <VideoCameraOutlined />,
-              label: "nav 2",
-            },
-            {
-              key: "3",
-              icon: <UploadOutlined />,
-              label: "nav 3",
-            },
-            {
-              key: sessionData ? "Logout" : "Login",
-              icon: sessionData ? <LogoutOutlined /> : <LoginOutlined />,
-              label: sessionData ? "Logout" : "Login",
-            },
-          ]}
+          items={pagesAndRoutes}
         />
       </Sider>
       <Layout>
@@ -86,15 +74,13 @@ const App: React.FC<MainLayoutProps> = ({ children }) => {
           />
         </Header>
         <Content
+          className="flex px-4"
           style={{
-            margin: "24px 16px",
-            padding: 24,
             minHeight: 280,
             background: colorBgContainer,
           }}
         >
-          {sessionData?.user.name ?? "not logged"}
-          {children}
+          {sessionData ? children : <LoginPage />}
         </Content>
       </Layout>
     </Layout>
