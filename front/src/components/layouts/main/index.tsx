@@ -33,7 +33,7 @@ const App: React.FC<MainLayoutProps> = ({ children }) => {
   const [selectedMenuItem, setSelectedMenuItem] = useState<string>(
     router.pathname ?? ""
   );
-  console.log(router.pathname);
+
   const handleNavigation = async (e: { key: string }) => {
     if (e.key === "Logout") await signOut();
     if (e.key === "Login") await signIn();

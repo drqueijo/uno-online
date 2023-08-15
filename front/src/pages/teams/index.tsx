@@ -1,91 +1,85 @@
 /* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Avatar, Button, Card, Divider, Input } from "antd";
-import { signIn, signOut, useSession } from "next-auth/react";
-
-import Head from "next/head";
+import { Avatar, Button, Card, Divider, FloatButton, Input, Modal } from "antd";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
-
 import { api } from "next/utils/api";
-import { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
+import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import DeleteModal from "./CreateOrUpdate";
+import { type Team, type User } from "@prisma/client";
+import CreateOrUpdate from "./CreateOrUpdate";
+import TeamCard from "./TeamCard";
+
+export interface CreateOrUpdateProps {
+  id?: string;
+  isOpen: boolean;
+}
+
+const CREATE_OR_UPDATE_INITIAL_VALUE = {
+  id: "",
+  isOpen: false,
+};
 
 export default function Home() {
-  const createTeam = api.teams.createTeam.useMutation();
+  const deleteTeam = api.teams.deleteTeam.useMutation();
   const { data: sessionData } = useSession();
-
+  const [modal, contextHolder] = Modal.useModal();
+  const [createOrUpdate, setCreateOrUpdate] = useState<CreateOrUpdateProps>(
+    CREATE_OR_UPDATE_INITIAL_VALUE
+  );
   const myTeams = api.teams.getMyTeams.useQuery({
     userId: sessionData?.user.id,
   });
 
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const $form = e.currentTarget;
-    const values = Object.fromEntries(new FormData($form));
+  const deleteRequest = async (teamId: string) => {
+    await deleteTeam.mutateAsync({ id: teamId, userId: sessionData?.user.id });
+    await myTeams.refetch();
+  };
 
-    const input = {
-      name: values.name as string,
-      adminId: sessionData?.user.id as string,
-    };
+  const handleDelete = async (teamId: string) => {
+    await modal.confirm({
+      title: "Are you sure want to delete this team? All boards will be missed",
+      icon: <ExclamationCircleOutlined />,
+      content: "",
+      okText: "Confirm deletion",
+      cancelText: "Cancel",
+      onOk: () => deleteRequest(teamId),
+    });
+  };
 
-    try {
-      await createTeam.mutateAsync(input);
-
-      await myTeams.refetch();
-      $form.reset();
-    } catch (cause) {
-      console.error({ cause }, "Failed to add post");
-    }
+  const onCloseModal = async () => {
+    await myTeams.refetch();
+    setCreateOrUpdate(CREATE_OR_UPDATE_INITIAL_VALUE);
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex w-full flex-col">
       <Divider />
-      <form onSubmit={onSubmit}>
-        <div className="mb-4 text-lg font-bold text-blue-500">
-          Create a new Team
-        </div>
-        <div className="flex flex-wrap gap-4">
-          <Input
-            className="w-72"
-            placeholder="Team Name"
-            id="name"
-            name="name"
-          />
-          <Button htmlType="submit"> Create </Button>
-        </div>
-      </form>
-      <Divider />
-      <div className="mb-4 text-lg font-bold text-blue-500">Your teams</div>
+      <CreateOrUpdate
+        {...createOrUpdate}
+        onOk={() => onCloseModal()}
+        onCancel={() => setCreateOrUpdate(CREATE_OR_UPDATE_INITIAL_VALUE)}
+      />
+      <div className="mb-8 text-lg font-bold text-blue-500">Your teams</div>
       <div className="flex flex-wrap gap-4">
         {myTeams.data?.map((team) => (
-          <Card
+          <TeamCard
+            onEditClick={(e) => setCreateOrUpdate(e)}
+            onDeleteClick={() => handleDelete(team.id)}
+            admin={sessionData?.user as User}
             key={team.id}
-            title={team.name}
-            extra={<Link href={`/teams/${team.id}`}>Edit</Link>}
-            className="h-fit w-72"
-          >
-            <p className="flex items-center justify-between text-sm font-bold">
-              {sessionData?.user.name}{" "}
-              <Avatar
-                src={sessionData?.user.image}
-                style={{ backgroundColor: "#fde3cf" }}
-              >
-                A
-              </Avatar>
-            </p>
-            <Divider />
-            {team.users.map((user) => (
-              <p className="text-xs" key={user.email}>
-                {user.name}
-              </p>
-            ))}
-            <Divider />
-            <div className="flex">
-              <Button className="ml-auto">add +</Button>
-            </div>
-          </Card>
+            team={team}
+          />
         ))}
       </div>
+      <FloatButton
+        onClick={() => setCreateOrUpdate({ id: "", isOpen: true })}
+        shape="circle"
+        type="primary"
+        icon={<PlusOutlined />}
+      />
+      {contextHolder}
     </div>
   );
 }

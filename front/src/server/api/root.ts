@@ -1,6 +1,7 @@
 import { exampleRouter } from "next/server/api/routers/example";
 import { createTRPCRouter } from "next/server/api/trpc";
 import { teamsRouter } from "./routers/teams";
+import { usersRouter } from "./routers/users";
 
 /**
  * This is the primary router for your server.
@@ -10,6 +11,7 @@ import { teamsRouter } from "./routers/teams";
 export const appRouter = createTRPCRouter({
   example: exampleRouter,
   teams: teamsRouter,
+  users: usersRouter,
 });
 
 // export type definition of API

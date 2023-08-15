@@ -16,7 +16,7 @@ const pagesAndRoutes = [
     label: "Teams",
   },
   {
-    key: "/",
+    key: "Logout",
     icon: <LogoutOutlined />,
     label: "Logout",
   },
