@@ -32,6 +32,10 @@ export default function Home() {
     userId: sessionData?.user.id,
   });
 
+  const teamsAsMember = api.teams.getTeamAsMember.useQuery({
+    userId: sessionData?.user.id,
+  });
+
   const deleteRequest = async (teamId: string) => {
     await deleteTeam.mutateAsync({ id: teamId, userId: sessionData?.user.id });
     await myTeams.refetch();
@@ -53,6 +57,8 @@ export default function Home() {
     setCreateOrUpdate(CREATE_OR_UPDATE_INITIAL_VALUE);
   };
 
+  console.log(teamsAsMember.data);
+
   return (
     <div className="flex w-full flex-col">
       <Divider />
@@ -68,6 +74,21 @@ export default function Home() {
             onEditClick={(e) => setCreateOrUpdate(e)}
             onDeleteClick={() => handleDelete(team.id)}
             admin={sessionData?.user as User}
+            key={team.id}
+            team={team}
+          />
+        ))}
+      </div>
+      <Divider />
+      <div className="mb-8 text-lg font-bold text-blue-500">
+        Teams that you are member
+      </div>
+      <div className="flex flex-wrap gap-4">
+        {teamsAsMember.data?.map((team) => (
+          <TeamCard
+            onEditClick={(e) => setCreateOrUpdate(e)}
+            onDeleteClick={() => handleDelete(team.id)}
+            admin={team.admin as User}
             key={team.id}
             team={team}
           />

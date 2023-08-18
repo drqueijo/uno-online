@@ -49,13 +49,13 @@ model Board {
     @@index([teamId])
 }
 
-
 model Team {
     id        String   @id @default(cuid())
     name      String
     createdAt DateTime @default(now())
-
+    
     adminId   String
+    
     updatedAt DateTime @updatedAt
     boards    Board[]
     users     User[]

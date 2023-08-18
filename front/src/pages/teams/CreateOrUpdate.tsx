@@ -30,8 +30,9 @@ const CreateOrUpdate: React.FC<EditModalProps> = ({
   const updateTeam = api.teams.updateTeam.useMutation();
   const usersRequest = api.users.getUsers.useQuery();
   const usersOptions =
-    usersRequest.data?.map((user) => ({ label: user.email, value: user.id })) ??
-    [];
+    usersRequest.data
+      ?.map((user) => ({ label: user.email, value: user.id }))
+      .filter((user) => user.value !== sessionData?.user.id) ?? [];
 
   useEffect(() => {
     setForm(FORM_INITIAL_STATE);
