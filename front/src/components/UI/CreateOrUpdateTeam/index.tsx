@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Button, Input, Modal, Select } from "antd";
+import { Input, Modal, Select } from "antd";
 import { useSession } from "next-auth/react";
 
 import { api } from "next/utils/api";

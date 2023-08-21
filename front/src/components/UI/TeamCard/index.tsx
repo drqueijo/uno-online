@@ -3,7 +3,7 @@
 import { type Team, type User } from "@prisma/client";
 import { Avatar, Card, Divider } from "antd";
 import Link from "next/link";
-import { type CreateOrUpdateProps } from ".";
+import { type CreateOrUpdateProps } from "next/pages/teams";
 
 type TeamWithUsers = Team & {
   users: User[];
@@ -14,6 +14,7 @@ interface TeamCardProps {
   admin?: User;
   onEditClick: ({ id, isOpen }: CreateOrUpdateProps) => void;
   onDeleteClick: (id: string) => void;
+  isAdmin: boolean;
 }
 
 export default function TeamCard({
@@ -21,6 +22,7 @@ export default function TeamCard({
   onEditClick,
   onDeleteClick,
   admin,
+  isAdmin,
 }: TeamCardProps) {
   return (
     <Card
@@ -28,30 +30,34 @@ export default function TeamCard({
       title={team.name}
       extra={
         <div className="flex gap-4">
-          <Link
-            onClick={() =>
-              onEditClick({
-                id: team.id,
-                isOpen: true,
-              })
-            }
-            href="#"
-          >
-            Edit
-          </Link>
-          <Link
-            href="#"
-            onClick={() => onDeleteClick(team.id)}
-            className="text-red-600 hover:text-red-400"
-          >
-            Delete
-          </Link>
+          {isAdmin && (
+            <>
+              <Link
+                onClick={() =>
+                  onEditClick({
+                    id: team.id,
+                    isOpen: true,
+                  })
+                }
+                href="#"
+              >
+                Edit
+              </Link>
+              <Link
+                href="#"
+                onClick={() => onDeleteClick(team.id)}
+                className="text-red-600 hover:text-red-400"
+              >
+                Delete
+              </Link>
+            </>
+          )}
         </div>
       }
       className="h-fit w-72"
     >
       <p className="flex items-center justify-between text-sm font-bold">
-        {admin?.name}{" "}
+        {admin?.name}
         <Avatar src={admin?.image} style={{ backgroundColor: "#fde3cf" }}>
           {admin?.name?.charAt(0)}
         </Avatar>

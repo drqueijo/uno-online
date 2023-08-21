@@ -1,19 +1,15 @@
-import {
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  UploadOutlined,
-  UserOutlined,
-  VideoCameraOutlined,
-  DingdingOutlined,
-  LoginOutlined,
-  LogoutOutlined,
-} from "@ant-design/icons";
+import { UserOutlined, LogoutOutlined, TableOutlined } from "@ant-design/icons";
 
 const pagesAndRoutes = [
   {
     key: "/teams",
     icon: <UserOutlined />,
     label: "Teams",
+  },
+  {
+    key: "/boards",
+    icon: <TableOutlined />,
+    label: "Boards",
   },
   {
     key: "Logout",

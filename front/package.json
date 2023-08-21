@@ -23,6 +23,7 @@
     "next": "^13.4.2",
     "next-auth": "^4.22.1",
     "react": "18.2.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "18.2.0",
     "superjson": "1.12.2",
     "zod": "^3.21.4"
@@ -32,6 +33,7 @@
     "@types/node": "^18.16.0",
     "@types/prettier": "^2.7.2",
     "@types/react": "^18.2.6",
+    "@types/react-beautiful-dnd": "^13.1.4",
     "@types/react-dom": "^18.2.4",
     "@typescript-eslint/eslint-plugin": "6.0.0",
     "@typescript-eslint/parser": "6.0.0",

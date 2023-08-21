@@ -113,7 +113,6 @@ export const teamsRouter = createTRPCRouter({
       });
 
       if (!existingTeam) {
-        // Handle error or return null as needed
         return null;
       }
 

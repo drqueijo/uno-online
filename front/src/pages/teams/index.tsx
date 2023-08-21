@@ -1,15 +1,13 @@
 /* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Avatar, Button, Card, Divider, FloatButton, Input, Modal } from "antd";
+import { Divider, FloatButton, Modal } from "antd";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
 import { api } from "next/utils/api";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
-import DeleteModal from "./CreateOrUpdate";
-import { type Team, type User } from "@prisma/client";
-import CreateOrUpdate from "./CreateOrUpdate";
-import TeamCard from "./TeamCard";
+import { type User } from "@prisma/client";
+import CreateOrUpdate from "next/components/UI/CreateOrUpdateTeam";
+import TeamCard from "next/components/UI/TeamCard";
 
 export interface CreateOrUpdateProps {
   id?: string;
@@ -21,7 +19,7 @@ const CREATE_OR_UPDATE_INITIAL_VALUE = {
   isOpen: false,
 };
 
-export default function Home() {
+export default function Teams() {
   const deleteTeam = api.teams.deleteTeam.useMutation();
   const { data: sessionData } = useSession();
   const [modal, contextHolder] = Modal.useModal();
@@ -57,8 +55,6 @@ export default function Home() {
     setCreateOrUpdate(CREATE_OR_UPDATE_INITIAL_VALUE);
   };
 
-  console.log(teamsAsMember.data);
-
   return (
     <div className="flex w-full flex-col">
       <Divider />
@@ -76,6 +72,7 @@ export default function Home() {
             admin={sessionData?.user as User}
             key={team.id}
             team={team}
+            isAdmin={sessionData?.user.id === team.adminId}
           />
         ))}
       </div>
@@ -91,6 +88,7 @@ export default function Home() {
             admin={team.admin as User}
             key={team.id}
             team={team}
+            isAdmin={sessionData?.user.id === team.adminId}
           />
         ))}
       </div>

@@ -16,7 +16,7 @@ model Card {
     updatedAt DateTime @updatedAt
     creatorId String
     creator   User     @relation(fields: [creatorId], references: [id])
-
+    
     statusId String
     status   Status @relation(fields: [statusId], references: [id])
     boardId  String
@@ -34,6 +34,10 @@ model Status {
     name      String
     color     String
     Card      Card[]
+    boardId   String
+    board   Board   @relation(fields: [boardId], references: [id])
+
+    @@index([boardId])
 }
 
 model Board {
@@ -42,7 +46,7 @@ model Board {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     cards     Card[]
-
+    status    Status[]
     teamId String
     team   Team   @relation(fields: [teamId], references: [id])
 
