@@ -69,4 +69,23 @@ export const cardsRouter = createTRPCRouter({
         },
       });
     }),
+  moveCard: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        orderIndex: z.number(),
+        statusId: z.string(),
+      })
+    )
+    .mutation(({ input, ctx }) => {
+      return ctx.prisma.card.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          orderIndex: input.orderIndex,
+          status: { connect: { id: input.statusId } },
+        },
+      });
+    }),
 });

@@ -48,7 +48,9 @@ export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
       await updateStatus.mutateAsync({ statusId: id, ...form });
     onOk();
   };
+
   const title = id ? "Update status" : "Create status";
+
   return (
     <Modal open={isOpen} onCancel={onCancel} onOk={onSubmit} title={title}>
       <div className="flex w-full flex-col  gap-4">

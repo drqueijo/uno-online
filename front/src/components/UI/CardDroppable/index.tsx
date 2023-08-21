@@ -8,6 +8,7 @@ interface CardDroppableProps {
   dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
   innerRef: (element: HTMLElement | null) => void;
   title: string;
+  index: number;
 }
 
 export const CardDroppable: React.FC<CardDroppableProps> = ({
@@ -15,6 +16,7 @@ export const CardDroppable: React.FC<CardDroppableProps> = ({
   dragHandleProps,
   innerRef,
   title,
+  index,
 }) => {
   return (
     <div
@@ -24,6 +26,7 @@ export const CardDroppable: React.FC<CardDroppableProps> = ({
       className="mb-4 rounded-lg border border-black bg-white p-3 font-bold text-black"
     >
       {title}
+      {index}
     </div>
   );
 };

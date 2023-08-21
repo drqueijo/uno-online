@@ -16,7 +16,7 @@ model Card {
     updatedAt DateTime @updatedAt
     creatorId String
     creator   User     @relation(fields: [creatorId], references: [id])
-    
+    orderIndex Int @default(0)
     statusId String
     status   Status @relation(fields: [statusId], references: [id])
     boardId  String

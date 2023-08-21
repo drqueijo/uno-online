@@ -2,7 +2,7 @@
 import { useRouter } from "next/router";
 import { api } from "next/utils/api";
 import { Card, type Board, Status } from "@prisma/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DragDropContext,
   Droppable,
@@ -18,9 +18,8 @@ import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import CreateOrUpdateCard from "next/components/UI/CreateOrUpdateCard";
 import CreateOrUpdateStatus from "next/components/UI/CreateOrUpdateStatus";
 
-interface BoardWithCardsAndStatus extends Board {
+interface StatusWithCards extends Status {
   cards: Card[];
-  status: Status[];
 }
 
 const MODAL_INITIAL_STATE = {
@@ -32,18 +31,42 @@ const MODAL_INITIAL_STATE = {
 export const BoardPanel: React.FC = ({}) => {
   const router = useRouter();
   const { id } = router.query;
-  const session = useSession();
+
   const board = api.cards.getCardsByBoardId.useQuery({
     boardId: typeof id === "string" ? id : "",
   });
-  const createStatus = api.status.createStatus.useMutation();
-  const statuses: Status[] = board.data?.status ?? [];
+  const updateCard = api.cards.moveCard.useMutation();
   const [cardModal, setCardModal] = useState(MODAL_INITIAL_STATE);
   const [statusModal, setStatusModal] = useState(MODAL_INITIAL_STATE);
+  const [columns, setColumns] = useState<StatusWithCards[]>([]);
+
+  useEffect(() => {
+    if (!board.data) return;
+    const mountedColumns = board.data.status.map((status) => {
+      const cards = board.data?.cards
+        .filter((card) => card.statusId === status.id)
+        .sort((a, b) => a.orderIndex - b.orderIndex);
+      return { ...status, cards: cards ?? [] };
+    });
+    setColumns(mountedColumns);
+  }, [board.data]);
 
   const onDragEnd = (result: DropResult) => {
-    console.log(result);
-    return;
+    if (!result.destination) return;
+
+    const { source, destination, draggableId } = result;
+    if (!destination ?? !source) return;
+
+    let columnSourceCopy: StatusWithCards | null = null;
+    columns.forEach((col) => {
+      if (col.id !== source.droppableId) return;
+      columnSourceCopy = col;
+    });
+    if (!columnSourceCopy) return;
+    if (source.droppableId === destination.droppableId) {
+      if (!columnSourceCopy) return;
+      columnSourceCopy;
+    }
   };
 
   const onModalOk = async () => {
@@ -68,7 +91,7 @@ export const BoardPanel: React.FC = ({}) => {
       />
       <DragDropContext onDragEnd={(e) => onDragEnd(e)}>
         <div className="flex h-full gap-4 py-4">
-          {statuses.map((status, statusIndex) => (
+          {columns?.map((status, statusIndex) => (
             <Droppable key={status.id} droppableId={status.id} type="CARD">
               {(provided) => (
                 <BoardColumn
@@ -77,24 +100,23 @@ export const BoardPanel: React.FC = ({}) => {
                   innerRef={provided.innerRef}
                   title={status.name}
                 >
-                  {board.data?.cards
-                    .filter((card) => card.statusId === status.id)
-                    .map((card, cardIndex) => (
-                      <Draggable
-                        key={card.id}
-                        draggableId={card.id}
-                        index={cardIndex}
-                      >
-                        {(provided) => (
-                          <CardDroppable
-                            draggableProps={provided.draggableProps}
-                            dragHandleProps={provided.dragHandleProps}
-                            innerRef={provided.innerRef}
-                            title={card.title}
-                          />
-                        )}
-                      </Draggable>
-                    ))}
+                  {status.cards.map((card, cardIndex) => (
+                    <Draggable
+                      key={card.id}
+                      draggableId={card.id}
+                      index={cardIndex}
+                    >
+                      {(provided) => (
+                        <CardDroppable
+                          index={cardIndex}
+                          draggableProps={provided.draggableProps}
+                          dragHandleProps={provided.dragHandleProps}
+                          innerRef={provided.innerRef}
+                          title={card.title}
+                        />
+                      )}
+                    </Draggable>
+                  ))}
                   <div
                     onClick={() =>
                       setCardModal({
