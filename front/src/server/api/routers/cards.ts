@@ -69,23 +69,29 @@ export const cardsRouter = createTRPCRouter({
         },
       });
     }),
-  moveCard: protectedProcedure
+  moveCards: protectedProcedure
     .input(
-      z.object({
-        id: z.string(),
-        orderIndex: z.number(),
-        statusId: z.string(),
-      })
+      z.array(
+        z.object({
+          id: z.string(),
+          orderIndex: z.number(),
+          statusId: z.string(),
+        })
+      )
     )
     .mutation(({ input, ctx }) => {
-      return ctx.prisma.card.update({
-        where: {
-          id: input.id,
-        },
-        data: {
-          orderIndex: input.orderIndex,
-          status: { connect: { id: input.statusId } },
-        },
+      const updatePromises = input.map((cardData) => {
+        return ctx.prisma.card.update({
+          where: {
+            id: cardData.id,
+          },
+          data: {
+            orderIndex: cardData.orderIndex,
+            status: { connect: { id: cardData.statusId } },
+          },
+        });
       });
+
+      return Promise.all(updatePromises);
     }),
 });

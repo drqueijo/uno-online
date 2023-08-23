@@ -28,14 +28,14 @@ const MODAL_INITIAL_STATE = {
   statusId: "",
 };
 
-export const BoardPanel: React.FC = ({}) => {
+export const BoardPanel: React.FC = () => {
   const router = useRouter();
   const { id } = router.query;
 
   const board = api.cards.getCardsByBoardId.useQuery({
     boardId: typeof id === "string" ? id : "",
   });
-  const updateCard = api.cards.moveCard.useMutation();
+  const moveCards = api.cards.moveCards.useMutation();
   const [cardModal, setCardModal] = useState(MODAL_INITIAL_STATE);
   const [statusModal, setStatusModal] = useState(MODAL_INITIAL_STATE);
   const [columns, setColumns] = useState<StatusWithCards[]>([]);
@@ -58,15 +58,65 @@ export const BoardPanel: React.FC = ({}) => {
     if (!destination ?? !source) return;
 
     let columnSourceCopy: StatusWithCards | null = null;
+    let columnDestinationCopy: StatusWithCards | null = null;
+    const columnsCopy = new Array(...columns);
+
     columns.forEach((col) => {
-      if (col.id !== source.droppableId) return;
-      columnSourceCopy = col;
+      if (col.id === source.droppableId) {
+        columnSourceCopy = new Object({ ...col }) as StatusWithCards;
+        const index = columnsCopy.findIndex(
+          (column) => column.id === source.droppableId
+        );
+        columnsCopy.splice(index, 1);
+        console.log(index);
+      }
+      if (col.id === destination.droppableId) {
+        columnDestinationCopy = new Object({ ...col }) as StatusWithCards;
+        const index = columnsCopy.findIndex(
+          (column) => column.id === destination.droppableId
+        );
+        if (index !== -1) columnsCopy.splice(index, 1);
+        console.log(index);
+      }
     });
-    if (!columnSourceCopy) return;
-    if (source.droppableId === destination.droppableId) {
-      if (!columnSourceCopy) return;
-      columnSourceCopy;
-    }
+
+    if (!columnSourceCopy || !columnDestinationCopy) return;
+
+    const removed = (columnSourceCopy as StatusWithCards).cards.splice(
+      source.index,
+      1
+    );
+    const card: Card = {
+      ...removed[0]!,
+      statusId: destination.droppableId,
+      orderIndex: destination.index,
+    };
+
+    (columnDestinationCopy as StatusWithCards).cards.splice(
+      destination.index,
+      0,
+      card
+    );
+    const resultColumns: StatusWithCards[] = [];
+    if (source.droppableId === destination.droppableId)
+      resultColumns.push(
+        { ...(columnDestinationCopy as StatusWithCards) },
+        ...columnsCopy
+      );
+    if (source.droppableId !== destination.droppableId)
+      resultColumns.push(
+        { ...(columnDestinationCopy as StatusWithCards) },
+        { ...(columnSourceCopy as StatusWithCards) },
+        ...columnsCopy
+      );
+    setColumns(resultColumns);
+    const cardsToSave: Card[] = [];
+    resultColumns.map((col) => {
+      col.cards.map((card) => {
+        cardsToSave.push(card);
+      });
+    });
+    moveCards.mutate(cardsToSave);
   };
 
   const onModalOk = async () => {
@@ -90,50 +140,58 @@ export const BoardPanel: React.FC = ({}) => {
         boardId={id as string}
       />
       <DragDropContext onDragEnd={(e) => onDragEnd(e)}>
-        <div className="flex h-full gap-4 py-4">
-          {columns?.map((status, statusIndex) => (
-            <Droppable key={status.id} droppableId={status.id} type="CARD">
-              {(provided) => (
-                <BoardColumn
-                  color={status.color}
-                  dropableProps={provided.droppableProps}
-                  innerRef={provided.innerRef}
-                  title={status.name}
-                >
-                  {status.cards.map((card, cardIndex) => (
-                    <Draggable
-                      key={card.id}
-                      draggableId={card.id}
-                      index={cardIndex}
-                    >
-                      {(provided) => (
-                        <CardDroppable
-                          index={cardIndex}
-                          draggableProps={provided.draggableProps}
-                          dragHandleProps={provided.dragHandleProps}
-                          innerRef={provided.innerRef}
-                          title={card.title}
-                        />
-                      )}
-                    </Draggable>
-                  ))}
-                  <div
-                    onClick={() =>
-                      setCardModal({
-                        isOpen: true,
-                        id: "",
-                        statusId: status.id,
-                      })
-                    }
-                    className="mb-4 flex cursor-pointer items-center justify-between rounded-lg border border-black bg-white p-2 font-bold text-black opacity-70"
+        <div className="flex h-full w-fit gap-4 py-4">
+          {columns
+            ?.sort((a, b) => {
+              const dateA = new Date(a.createdAt).getTime();
+              const dateB = new Date(b.createdAt).getTime();
+              return dateA - dateB;
+            })
+            .map((status) => (
+              <Droppable key={status.id} droppableId={status.id} type="CARD">
+                {(provided) => (
+                  <BoardColumn
+                    color={status.color}
+                    dropableProps={provided.droppableProps}
+                    innerRef={provided.innerRef}
+                    title={status.name}
                   >
-                    add new card <PlusOutlined />
-                  </div>
-                  {provided.placeholder}
-                </BoardColumn>
-              )}
-            </Droppable>
-          ))}
+                    {status.cards
+                      .sort((a, b) => a.orderIndex - b.orderIndex)
+                      .map((card, cardIndex) => (
+                        <Draggable
+                          key={card.id}
+                          draggableId={card.id}
+                          index={cardIndex}
+                        >
+                          {(provided) => (
+                            <CardDroppable
+                              index={cardIndex}
+                              draggableProps={provided.draggableProps}
+                              dragHandleProps={provided.dragHandleProps}
+                              innerRef={provided.innerRef}
+                              title={card.title}
+                            />
+                          )}
+                        </Draggable>
+                      ))}
+                    <div
+                      onClick={() =>
+                        setCardModal({
+                          isOpen: true,
+                          id: "",
+                          statusId: status.id,
+                        })
+                      }
+                      className="mb-4 flex cursor-pointer items-center justify-between rounded-lg border border-black bg-white p-2 font-bold text-black opacity-70"
+                    >
+                      add new card <PlusOutlined />
+                    </div>
+                    {provided.placeholder}
+                  </BoardColumn>
+                )}
+              </Droppable>
+            ))}
           <div
             onClick={() =>
               setStatusModal({
