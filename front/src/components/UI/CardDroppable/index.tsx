@@ -9,6 +9,7 @@ interface CardDroppableProps {
   innerRef: (element: HTMLElement | null) => void;
   title: string;
   index: number;
+  onClick: () => void;
 }
 
 export const CardDroppable: React.FC<CardDroppableProps> = ({
@@ -16,10 +17,11 @@ export const CardDroppable: React.FC<CardDroppableProps> = ({
   dragHandleProps,
   innerRef,
   title,
-  index,
+  onClick,
 }) => {
   return (
     <div
+      onClick={onClick}
       {...draggableProps}
       {...dragHandleProps}
       ref={innerRef}

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { ColorPicker, Input, Modal, Select } from "antd";
+import { Button, ColorPicker, Input, Modal } from "antd";
 import { useSession } from "next-auth/react";
 import { api } from "next/utils/api";
 import { useEffect, useState } from "react";
@@ -24,8 +24,14 @@ export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
   id,
 }) => {
   const status = api.status.getStatusById.useQuery({ statusId: id });
+  const statuses = api.status.getStatus.useQuery({ boardId });
   const createStatus = api.status.createStatus.useMutation();
   const updateStatus = api.status.updateStatus.useMutation();
+  const deleteStatus = api.status.deleteStatus.useMutation();
+  const cards = api.cards.getCardsByBoardId.useQuery({ boardId });
+  const cardsInThisStatusFound = cards.data?.cards.filter(
+    (card) => card.statusId === id
+  );
   const session = useSession();
   const [form, setForm] = useState(FORM_INITIAL_STATE);
 
@@ -44,8 +50,17 @@ export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
       await createStatus
         .mutateAsync({ ...form, boardId })
         .catch((e) => console.log(e));
+
     if (id && session)
       await updateStatus.mutateAsync({ statusId: id, ...form });
+
+    await statuses.refetch();
+    onOk();
+  };
+
+  const onDelete = async () => {
+    if (!id) return;
+    await deleteStatus.mutateAsync({ statusId: id });
     onOk();
   };
 
@@ -71,6 +86,13 @@ export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
           )}
           value={form.color}
         />
+        {id && cardsInThisStatusFound?.length === 0 && (
+          <div>
+            <Button type="primary" danger onClick={onDelete}>
+              DELETE
+            </Button>
+          </div>
+        )}
       </div>
     </Modal>
   );

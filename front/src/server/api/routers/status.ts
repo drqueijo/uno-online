@@ -46,6 +46,7 @@ export const statusRouter = createTRPCRouter({
       })
     )
     .query(({ input, ctx }) => {
+      if (!input.boardId) return [];
       return ctx.prisma.status.findMany({
         where: {
           boardId: input.boardId,
@@ -60,6 +61,19 @@ export const statusRouter = createTRPCRouter({
     )
     .query(({ input, ctx }) => {
       return ctx.prisma.status.findUnique({
+        where: {
+          id: input.statusId,
+        },
+      });
+    }),
+  deleteStatus: protectedProcedure
+    .input(
+      z.object({
+        statusId: z.string(),
+      })
+    )
+    .mutation(({ input, ctx }) => {
+      return ctx.prisma.status.delete({
         where: {
           id: input.statusId,
         },

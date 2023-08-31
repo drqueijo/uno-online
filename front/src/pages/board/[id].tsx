@@ -1,20 +1,17 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { useRouter } from "next/router";
 import { api } from "next/utils/api";
-import { Card, type Board, Status } from "@prisma/client";
+import { type Card, type Status } from "@prisma/client";
 import { useEffect, useState } from "react";
 import {
   DragDropContext,
   Droppable,
   Draggable,
   type DropResult,
-  type DroppableProvided,
 } from "react-beautiful-dnd";
-import { Button, Input } from "antd";
-import { useSession } from "next-auth/react";
 import BoardColumn from "next/components/UI/BoardColumn";
 import CardDroppable from "next/components/UI/CardDroppable";
-import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { PlusOutlined } from "@ant-design/icons";
 import CreateOrUpdateCard from "next/components/UI/CreateOrUpdateCard";
 import CreateOrUpdateStatus from "next/components/UI/CreateOrUpdateStatus";
 
@@ -54,7 +51,7 @@ export const BoardPanel: React.FC = () => {
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    const { source, destination, draggableId } = result;
+    const { source, destination } = result;
     if (!destination ?? !source) return;
 
     let columnSourceCopy: StatusWithCards | null = null;
@@ -140,7 +137,7 @@ export const BoardPanel: React.FC = () => {
         boardId={id as string}
       />
       <DragDropContext onDragEnd={(e) => onDragEnd(e)}>
-        <div className="flex h-full w-fit gap-4 py-4">
+        <div className="flex h-full w-fit gap-8 py-4">
           {columns
             ?.sort((a, b) => {
               const dateA = new Date(a.createdAt).getTime();
@@ -151,6 +148,13 @@ export const BoardPanel: React.FC = () => {
               <Droppable key={status.id} droppableId={status.id} type="CARD">
                 {(provided) => (
                   <BoardColumn
+                    onEditClick={() =>
+                      setStatusModal({
+                        isOpen: true,
+                        id: status.id,
+                        statusId: status.id,
+                      })
+                    }
                     color={status.color}
                     dropableProps={provided.droppableProps}
                     innerRef={provided.innerRef}
@@ -166,6 +170,13 @@ export const BoardPanel: React.FC = () => {
                         >
                           {(provided) => (
                             <CardDroppable
+                              onClick={() =>
+                                setCardModal({
+                                  isOpen: true,
+                                  id: card.id,
+                                  statusId: status.id,
+                                })
+                              }
                               index={cardIndex}
                               draggableProps={provided.draggableProps}
                               dragHandleProps={provided.dragHandleProps}
