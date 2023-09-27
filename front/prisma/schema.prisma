@@ -9,46 +9,77 @@ datasource db {
 }
 
 model Card {
-    id        String   @id @default(cuid())
-    content   String
-    title     String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    creatorId String
-    creator   User     @relation(fields: [creatorId], references: [id])
-    orderIndex Int @default(0)
-    statusId String
-    status   Status @relation(fields: [statusId], references: [id])
-    boardId  String
-    board    Board  @relation(fields: [boardId], references: [id])
+    id         String        @id @default(cuid())
+    content    String
+    title      String
+    createdAt  DateTime      @default(now())
+    updatedAt  DateTime      @updatedAt
+    history    CardHistory[]
+    creatorId  String
+    creator    User          @relation(fields: [creatorId], references: [id])
+    orderIndex Int           @default(0)
+    statusId   String
+    status     Status        @relation(fields: [statusId], references: [id])
+    boardId    String
+    board      Board         @relation(fields: [boardId], references: [id])
+    sprintId   String?
+    sprint     Sprint?       @relation(fields: [sprintId], references: [id])
 
     @@index([boardId])
     @@index([creatorId])
     @@index([statusId])
+    @@index([sprintId])
+}
+
+model CardHistory {
+    id         String   @id @default(cuid())
+    content    String
+    title      String
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+    cardId     String
+    card       Card     @relation(fields: [cardId], references: [id])
+    creatorId  String
+    creator    User     @relation(fields: [creatorId], references: [id])
+    orderIndex Int      @default(0)
+    statusId   String
+    status     Status   @relation(fields: [statusId], references: [id])
+    boardId    String
+    board      Board    @relation(fields: [boardId], references: [id])
+    sprintId   String?
+    sprint     Sprint?  @relation(fields: [sprintId], references: [id])
+
+    @@index([boardId])
+    @@index([creatorId])
+    @@index([statusId])
+    @@index([sprintId])
+    @@index([cardId])
 }
 
 model Status {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    name      String
-    color     String
-    Card      Card[]
-    boardId   String
-    board   Board   @relation(fields: [boardId], references: [id])
+    id            String        @id @default(cuid())
+    createdAt     DateTime      @default(now())
+    updatedAt     DateTime      @updatedAt
+    name          String
+    color         String
+    Card          Card[]
+    cardHistories CardHistory[]
+    boardId       String
+    board         Board         @relation(fields: [boardId], references: [id])
 
     @@index([boardId])
 }
 
 model Board {
-    id        String   @id @default(cuid())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    cards     Card[]
-    status    Status[]
-    teamId String
-    team   Team   @relation(fields: [teamId], references: [id])
+    id            String        @id @default(cuid())
+    name          String
+    createdAt     DateTime      @default(now())
+    updatedAt     DateTime      @updatedAt
+    cards         Card[]
+    status        Status[]
+    cardHistories CardHistory[]
+    teamId        String
+    team          Team          @relation(fields: [teamId], references: [id])
 
     @@index([teamId])
 }
@@ -57,12 +88,25 @@ model Team {
     id        String   @id @default(cuid())
     name      String
     createdAt DateTime @default(now())
-    
-    adminId   String
-    
+
+    adminId String
+
     updatedAt DateTime @updatedAt
     boards    Board[]
     users     User[]
+}
+
+model Sprint {
+    id            String        @id @default(cuid())
+    name          String
+    startAt       DateTime
+    endAt         DateTime
+    creatorId     String
+    creator       User          @relation(fields: [creatorId], references: [id])
+    cards         Card[]
+    cardHistories CardHistory[]
+
+    @@index([creatorId])
 }
 
 // Necessary for Next auth
@@ -96,14 +140,16 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
+    id            String        @id @default(cuid())
     name          String?
-    email         String?   @unique
+    email         String?       @unique
     emailVerified DateTime?
     image         String?
+    sprints       Sprint[]
     accounts      Account[]
     sessions      Session[]
     Card          Card[]
+    cardHistories CardHistory[]
     Team          Team[]
 }
 

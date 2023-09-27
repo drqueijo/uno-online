@@ -1,4 +1,9 @@
-import { UserOutlined, LogoutOutlined, TableOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  LogoutOutlined,
+  TableOutlined,
+  FieldTimeOutlined,
+} from "@ant-design/icons";
 
 const pagesAndRoutes = [
   {
@@ -10,6 +15,11 @@ const pagesAndRoutes = [
     key: "/boards",
     icon: <TableOutlined />,
     label: "Boards",
+  },
+  {
+    key: "/sprints",
+    icon: <FieldTimeOutlined />,
+    label: "Sprints",
   },
   {
     key: "Logout",

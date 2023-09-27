@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "next/server/api/trpc";
+import { Card } from "@prisma/client";
 
 export const cardsRouter = createTRPCRouter({
   getCardsByBoardId: protectedProcedure
@@ -37,8 +38,8 @@ export const cardsRouter = createTRPCRouter({
         creatorId: z.string().optional(),
       })
     )
-    .mutation(({ input, ctx }) => {
-      return ctx.prisma.card.create({
+    .mutation(async ({ input, ctx }) => {
+      const card = await ctx.prisma.card.create({
         data: {
           title: input.title,
           content: input.content,
@@ -47,6 +48,18 @@ export const cardsRouter = createTRPCRouter({
           creator: { connect: { id: input.creatorId } },
         },
       });
+      if (!card.id) return;
+      await ctx.prisma.cardHistory.create({
+        data: {
+          title: input.title,
+          content: input.content,
+          board: { connect: { id: input.boardId } },
+          status: { connect: { id: input.statusId } },
+          creator: { connect: { id: input.creatorId } },
+          card: { connect: { id: card.id } },
+        },
+      });
+      return card;
     }),
   updateCard: protectedProcedure
     .input(
@@ -57,8 +70,8 @@ export const cardsRouter = createTRPCRouter({
         statusId: z.string(),
       })
     )
-    .mutation(({ input, ctx }) => {
-      return ctx.prisma.card.update({
+    .mutation(async ({ input, ctx }) => {
+      const card = await ctx.prisma.card.update({
         where: {
           id: input.id,
         },
@@ -68,6 +81,19 @@ export const cardsRouter = createTRPCRouter({
           status: { connect: { id: input.statusId } },
         },
       });
+
+      if (!card.id) return;
+      await ctx.prisma.cardHistory.create({
+        data: {
+          title: input.title,
+          content: input.content,
+          board: { connect: { id: card.boardId } },
+          status: { connect: { id: card.statusId } },
+          creator: { connect: { id: card.creatorId } },
+          card: { connect: { id: card.id } },
+        },
+      });
+      return card;
     }),
   moveCards: protectedProcedure
     .input(
@@ -106,5 +132,36 @@ export const cardsRouter = createTRPCRouter({
           id: input.id,
         },
       });
+    }),
+  getCardsBySprintId: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const { id } = ctx.session.user;
+      const cards: Card[] = [];
+      const rest: Card[] = [];
+      if (!input.id)
+        return {
+          cards,
+          rest,
+        };
+
+      const allCards = await ctx.prisma.card.findMany({
+        include: {
+          status: true,
+        },
+      });
+      allCards.forEach((a) => {
+        if (a.sprintId === input.id) return cards.push(a);
+        if (a.creatorId === id) return rest.push(a);
+      });
+
+      return {
+        cards,
+        rest,
+      };
     }),
 });

@@ -47,7 +47,7 @@ const App: React.FC<MainLayoutProps> = ({ children }) => {
         trigger={null}
         collapsible
         collapsed={collapsed}
-        className="h-screen overflow-auto"
+        className="min-h-screen overflow-auto"
       >
         <div className="flex p-4 text-5xl text-white">
           <DingdingOutlined className="m-auto" />
@@ -74,7 +74,7 @@ const App: React.FC<MainLayoutProps> = ({ children }) => {
           />
         </Header>
         <Content
-          className="flex px-4"
+          className="flex px-4 pb-6"
           style={{
             minHeight: 280,
             background: colorBgContainer,
