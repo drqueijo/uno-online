@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Input, Modal, Select } from "antd";
+
 import { useSession } from "next-auth/react";
+import { useNotification } from "next/providers/NotificationProvider";
 import { api } from "next/utils/api";
 import { useEffect, useState } from "react";
 
@@ -28,6 +30,7 @@ export const CreateOrUpdate: React.FC<CreateOrUpdateProps> = ({
   const myTeams = api.teams.getMyTeams.useQuery({
     userId: sessionData?.user.id,
   });
+  const notification = useNotification();
   const board = api.boards.getBoardById.useQuery({ id });
   const teamsOptions = myTeams.data?.map((team) => ({
     label: team.name,
@@ -46,7 +49,11 @@ export const CreateOrUpdate: React.FC<CreateOrUpdateProps> = ({
 
   const onSubmit = async () => {
     if (!id && sessionData)
-      await createBoard.mutateAsync(form).catch((e) => console.log(e));
+      await createBoard
+        .mutateAsync(form)
+        .catch((e) =>
+          notification.onError("Erro ao criar novo Board", e as string)
+        );
     setForm(FORM_INITIAL_STATE);
     onOk();
   };

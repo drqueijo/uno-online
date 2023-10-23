@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "next/server/api/trpc";
+import { BoardRepository } from "../repository/BoardRepository";
+import { ZodError } from "../core/errors/ZodError";
+import { CreateBoardUseCase } from "../modules/Boards/CreateBoard/CreateBoardUseCase";
 
 export const boardsRouter = createTRPCRouter({
   getMyBoards: protectedProcedure
@@ -56,15 +59,21 @@ export const boardsRouter = createTRPCRouter({
         team: z.string(),
       })
     )
-    .mutation(({ input, ctx }) => {
-      return ctx.prisma.board.create({
-        data: {
-          ...input,
-          team: {
-            connect: { id: input.team },
-          },
-        },
-      });
+    .mutation(async ({ input }) => {
+      let response;
+      try {
+        const payload = {
+          name: input.name,
+          teamId: input.team,
+        };
+        response = await new CreateBoardUseCase(
+          new BoardRepository(),
+          new ZodError()
+        ).execute(payload);
+      } catch (err) {
+        if (err instanceof ZodError) response = err;
+      }
+      return response;
     }),
   deleteBoard: protectedProcedure
     .input(

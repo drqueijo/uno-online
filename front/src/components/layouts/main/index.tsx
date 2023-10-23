@@ -16,6 +16,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import LoginPage from "../login";
 import pagesAndRoutes from "next/utils/pagesAndRoutes";
 import { useRouter } from "next/router";
+import { NotificationProvider } from "next/providers/NotificationProvider";
 
 const { Header, Sider, Content } = Layout;
 
@@ -43,46 +44,48 @@ const App: React.FC<MainLayoutProps> = ({ children }) => {
 
   return (
     <Layout>
-      <Sider
-        trigger={null}
-        collapsible
-        collapsed={collapsed}
-        className="min-h-screen overflow-auto"
-      >
-        <div className="flex p-4 text-5xl text-white">
-          <DingdingOutlined className="m-auto" />
-        </div>
-        <Menu
-          selectedKeys={[selectedMenuItem]}
-          onClick={handleNavigation}
-          theme="dark"
-          mode="inline"
-          items={pagesAndRoutes}
-        />
-      </Sider>
-      <Layout>
-        <Header style={{ padding: 0, background: colorBgContainer }}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: "16px",
-              width: 64,
-              height: 64,
-            }}
-          />
-        </Header>
-        <Content
-          className="flex px-4 pb-6"
-          style={{
-            minHeight: 280,
-            background: colorBgContainer,
-          }}
+      <NotificationProvider>
+        <Sider
+          trigger={null}
+          collapsible
+          collapsed={collapsed}
+          className="min-h-screen overflow-auto"
         >
-          {sessionData ? children : <LoginPage />}
-        </Content>
-      </Layout>
+          <div className="flex p-4 text-5xl text-white">
+            <DingdingOutlined className="m-auto" />
+          </div>
+          <Menu
+            selectedKeys={[selectedMenuItem]}
+            onClick={handleNavigation}
+            theme="dark"
+            mode="inline"
+            items={pagesAndRoutes}
+          />
+        </Sider>
+        <Layout>
+          <Header style={{ padding: 0, background: colorBgContainer }}>
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              style={{
+                fontSize: "16px",
+                width: 64,
+                height: 64,
+              }}
+            />
+          </Header>
+          <Content
+            className="flex px-4 pb-6"
+            style={{
+              minHeight: 280,
+              background: colorBgContainer,
+            }}
+          >
+            {sessionData ? children : <LoginPage />}
+          </Content>
+        </Layout>
+      </NotificationProvider>
     </Layout>
   );
 };
