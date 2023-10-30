@@ -1,42 +1,22 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "next/server/api/trpc";
-import { BoardRepository } from "../repository/BoardRepository";
-import { ZodError } from "../core/errors/ZodError";
 import { CreateBoardUseCase } from "../modules/Boards/CreateBoard/CreateBoardUseCase";
+import { BoardRepository } from "../repository/BoardRepository";
+import { UpdateBoardUseCase } from "../modules/Boards/UpdateBoard/UpdateBoardUseCase";
+import { DeleteBoardUseCase } from "../modules/Boards/DeleteBoard/DeleteBoardUseCase";
+import { GetBoardByUserBoardUseCase } from "../modules/Boards/GetBoardByUser/GetBoardByUserUseCase";
+import { TeamRepository } from "../repository/TeamRepository";
 
 export const boardsRouter = createTRPCRouter({
   getMyBoards: protectedProcedure
     .input(z.object({ userId: z.string().nullable().optional() }))
-    .query(async ({ input, ctx }) => {
-      if (!input.userId) return null;
-
-      const myTeams = await ctx.prisma.team.findMany({
-        where: {
-          adminId: input.userId,
-        },
-      });
-      const teamMember = await ctx.prisma.team.findMany({
-        where: {
-          users: { some: { id: input.userId } },
-        },
-      });
-
-      const teams = [...myTeams, ...teamMember];
-      const myTeamsWithBoards = Promise.all(
-        teams.map(async (team) => {
-          const boards = await ctx.prisma.board.findMany({
-            where: {
-              teamId: team.id,
-            },
-            include: {
-              cards: true,
-            },
-          });
-          return { ...team, boards };
-        })
-      );
-      return myTeamsWithBoards;
+    .query(async ({ input }) => {
+      const response = await new GetBoardByUserBoardUseCase(
+        new BoardRepository(),
+        new TeamRepository()
+      ).execute(input);
+      return response.reponse;
     }),
   getBoardById: protectedProcedure
     .input(z.object({ id: z.string().optional() }))
@@ -56,23 +36,27 @@ export const boardsRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string(),
-        team: z.string(),
+        teamId: z.string(),
       })
     )
     .mutation(async ({ input }) => {
-      let response;
-      try {
-        const payload = {
-          name: input.name,
-          teamId: input.team,
-        };
-        response = await new CreateBoardUseCase(
-          new BoardRepository(),
-          new ZodError()
-        ).execute(payload);
-      } catch (err) {
-        if (err instanceof ZodError) response = err;
-      }
+      const response = await new CreateBoardUseCase(
+        new BoardRepository()
+      ).execute(input);
+      return response;
+    }),
+  updateBoard: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        teamId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const response = await new UpdateBoardUseCase(
+        new BoardRepository()
+      ).execute(input);
       return response;
     }),
   deleteBoard: protectedProcedure
@@ -81,11 +65,10 @@ export const boardsRouter = createTRPCRouter({
         boardId: z.string(),
       })
     )
-    .mutation(({ input, ctx }) => {
-      return ctx.prisma.board.delete({
-        where: {
-          id: input.boardId,
-        },
+    .mutation(({ input }) => {
+      const response = new DeleteBoardUseCase(new BoardRepository()).execute({
+        id: input.boardId,
       });
+      return response;
     }),
 });

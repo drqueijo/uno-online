@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import BoardCard from "next/components/UI/BoardCard";
 import { type User } from "@prisma/client";
+import { useNotification } from "next/providers/NotificationProvider";
 
 export interface CreateOrUpdateProps {
   id: string;
@@ -21,6 +22,7 @@ const CREATE_OR_UPDATE_INITIAL_VALUE = {
 export const Boards: React.FC = ({}) => {
   const { data: sessionData } = useSession();
   const [modal, contextHolder] = Modal.useModal();
+  const notification = useNotification();
   const [createOrUpdate, setCreateOrUpdate] = useState(
     CREATE_OR_UPDATE_INITIAL_VALUE
   );
@@ -35,11 +37,18 @@ export const Boards: React.FC = ({}) => {
   };
 
   const deleteRequest = async (boardId: string) => {
-    await deleteTeam.mutateAsync({ boardId });
+    const res = await deleteTeam.mutateAsync({ boardId });
+    if (res.error) return notification.onError("Erro ao deletar", res.message);
+    notification.onSuccess("Board", res.message);
     await boards.refetch();
   };
 
-  const handleDelete = async (boardId: string) => {
+  const handleDelete = async (boardId: string, isEmpty: boolean) => {
+    if (!isEmpty)
+      return notification.onError(
+        "Erro ao deletar",
+        "Remova todos os cards antes de deletar"
+      );
     await modal.confirm({
       title: "Are you sure want to delete this board? All cards will be missed",
       icon: <ExclamationCircleOutlined />,
@@ -65,16 +74,21 @@ export const Boards: React.FC = ({}) => {
           <div key={team.id} className="mb-8 text-lg font-bold text-blue-500">
             {team.name}
           </div>
+
           <div className="flex flex-wrap gap-4">
             {team.boards.map((board) => (
-              <BoardCard
-                onEditClick={(e) => setCreateOrUpdate(e)}
-                onDeleteClick={() => handleDelete(board.id)}
-                admin={sessionData?.user as User}
-                key={board.id}
-                board={board}
-                isAdmin={sessionData?.user.id === team.adminId}
-              />
+              <>
+                <BoardCard
+                  onEditClick={(e) => setCreateOrUpdate(e)}
+                  onDeleteClick={() =>
+                    handleDelete(board.id, board.cards.length === 0)
+                  }
+                  admin={sessionData?.user as User}
+                  key={board.id}
+                  board={board}
+                  isAdmin={sessionData?.user.id === team.adminId}
+                />
+              </>
             ))}
           </div>
           <Divider />

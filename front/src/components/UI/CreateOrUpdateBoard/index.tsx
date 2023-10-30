@@ -15,7 +15,7 @@ interface CreateOrUpdateProps {
 
 const FORM_INITIAL_STATE = {
   name: "",
-  team: "",
+  teamId: "",
 };
 
 export const CreateOrUpdate: React.FC<CreateOrUpdateProps> = ({
@@ -26,6 +26,7 @@ export const CreateOrUpdate: React.FC<CreateOrUpdateProps> = ({
 }) => {
   const [form, setForm] = useState(FORM_INITIAL_STATE);
   const createBoard = api.boards.createBoard.useMutation();
+  const updateBoard = api.boards.updateBoard.useMutation();
   const { data: sessionData } = useSession();
   const myTeams = api.teams.getMyTeams.useQuery({
     userId: sessionData?.user.id,
@@ -42,25 +43,44 @@ export const CreateOrUpdate: React.FC<CreateOrUpdateProps> = ({
     if (!id || !board.data) return;
     const { team, name } = board.data;
     setForm({
-      team: team.id,
+      teamId: team.id,
       name,
     });
   }, [board.data, id]);
 
-  const onSubmit = async () => {
-    if (!id && sessionData)
-      await createBoard
-        .mutateAsync(form)
-        .catch((e) =>
-          notification.onError("Erro ao criar novo Board", e as string)
-        );
+  const onCreateBoard = async () => {
+    const res = await createBoard.mutateAsync(form);
+    if (res.error) {
+      return notification.onError("Erro", res.message);
+    }
+    notification.onSuccess(res.reponse!.name, res.message);
+    setForm(FORM_INITIAL_STATE);
+    onOk();
+  };
+
+  const onUpdateBoard = async () => {
+    if (!id)
+      return notification.onError(
+        "Board",
+        "Precisa selectionar um board valido"
+      );
+    const res = await updateBoard.mutateAsync({ id, ...form });
+    if (res.error) {
+      return notification.onError("Erro", res.message);
+    }
+    notification.onSuccess(res.reponse!.name, res.message);
     setForm(FORM_INITIAL_STATE);
     onOk();
   };
 
   const title = id ? "Edit your board" : "Create a new board";
   return (
-    <Modal open={isOpen} onCancel={onCancel} onOk={onSubmit} title={title}>
+    <Modal
+      open={isOpen}
+      onCancel={onCancel}
+      onOk={id ? onUpdateBoard : onCreateBoard}
+      title={title}
+    >
       <div className="flex w-full flex-col  gap-4">
         <label className="flex flex-col gap-2 font-bold">
           Board Name
@@ -74,9 +94,9 @@ export const CreateOrUpdate: React.FC<CreateOrUpdateProps> = ({
         <label className="flex flex-col gap-2 font-bold">
           Boards team
           <Select
-            onChange={(e) => setForm({ ...form, team: e })}
+            onChange={(e) => setForm({ ...form, teamId: e })}
             options={teamsOptions}
-            value={form.team}
+            value={form.teamId}
             className="w-full"
             loading={board.isLoading || myTeams.isLoading}
           />
