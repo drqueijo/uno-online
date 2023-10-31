@@ -8,6 +8,7 @@ import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { type User } from "@prisma/client";
 import CreateOrUpdate from "next/components/UI/CreateOrUpdateTeam";
 import TeamCard from "next/components/UI/TeamCard";
+import { useNotification } from "next/providers/NotificationProvider";
 
 export interface CreateOrUpdateProps {
   id?: string;
@@ -23,6 +24,7 @@ export default function Teams() {
   const deleteTeam = api.teams.deleteTeam.useMutation();
   const { data: sessionData } = useSession();
   const [modal, contextHolder] = Modal.useModal();
+  const notification = useNotification()
   const [createOrUpdate, setCreateOrUpdate] = useState<CreateOrUpdateProps>(
     CREATE_OR_UPDATE_INITIAL_VALUE
   );
@@ -35,7 +37,9 @@ export default function Teams() {
   });
 
   const deleteRequest = async (teamId: string) => {
-    await deleteTeam.mutateAsync({ id: teamId, userId: sessionData?.user.id });
+    const response = await deleteTeam.mutateAsync({ id: teamId, userId: sessionData?.user.id });
+    if(!response?.id) return notification.onError('Team', 'Erro ao deletar time')
+    notification.onSuccess(response.name, 'Time deletado com sucesso')
     await myTeams.refetch();
   };
 

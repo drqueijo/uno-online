@@ -8,6 +8,8 @@ import { api } from "next/utils/api";
 import { DATE_FORMAT, isoDate } from "next/utils/date";
 import { useEffect, useState } from "react";
 import { DatePicker } from "antd";
+import { z } from "zod";
+import { useNotification } from "next/providers/NotificationProvider";
 
 type CardWithStatus = PrismaCardType & {
   status: Status;
@@ -21,6 +23,12 @@ export interface SprintFormState {
 
 const today = dayjs();
 const nextMonth = dayjs().add(1, "M");
+
+const schema = z.object({
+  name: z.string().nonempty('O campo nome precisa ser preenchido'),
+  startAt: z.string({required_error: 'o campo start at precisa ser preenchido'}),
+  endAt: z.string({required_error: 'o campo end at precisa ser preenchido'}),
+})
 
 const SPRINT_FORM_INITIAL_STATE: SprintFormState = {
   name: "",
@@ -41,6 +49,7 @@ export const SprintPage: React.FC = ({}) => {
   const updateSprint = api.sprints.updateSprint.useMutation();
   const deleteSprint = api.sprints.deleteSprint.useMutation();
   const [form, setForm] = useState<SprintFormState>(SPRINT_FORM_INITIAL_STATE);
+  const notification = useNotification()
 
   useEffect(() => {
     if (!sprint.data) return;
@@ -52,10 +61,12 @@ export const SprintPage: React.FC = ({}) => {
   }, [sprint.data]);
 
   const addToSprint = async (cardId: string) => {
-    await addCardToSprintRequest.mutateAsync({
+    const response = await addCardToSprintRequest.mutateAsync({
       sprintId: id! as string,
       cardId: cardId,
     });
+    if(!response.id) return notification.onError('Card', 'Erro ao adicionar card da sprint')
+    notification.onSuccess(response.title, 'Card adicionado com sucesso')
     await issues.refetch();
   };
 
@@ -65,23 +76,32 @@ export const SprintPage: React.FC = ({}) => {
   };
 
   const removeFromSprint = async (cardId: string) => {
-    await removeFromSprintRequent.mutateAsync({
+    const response = await removeFromSprintRequent.mutateAsync({
       sprintId: id! as string,
       cardId: cardId,
     });
+    if(!response.id) return notification.onError('Card', 'Erro ao remover card da sprint')
+    notification.onSuccess(response.title, 'Card removido com sucesso')
     await issues.refetch();
   };
 
   const editSprint = async () => {
-    const { name, startAt, endAt } = form;
-    if (!startAt) return;
-    if (!endAt) return;
-    if (!name) return;
+    
+    const payload = {
+      ...form,
+      startAt: form.startAt?.toISOString(),
+      endAt: form.endAt?.toISOString(),
+    }
+    const validator = schema.safeParse(payload)
+    if(!validator.success) {
+      const message = validator.error.issues[0]?.message ?? "";
+      return notification.onError('Sprint', message)
+    }
     await updateSprint.mutateAsync({
       ...sprint.data!,
-      name,
-      startAt: isoDate(startAt),
-      endAt: isoDate(endAt),
+      ...form,
+      startAt: form.startAt?.toISOString() ?? '',
+      endAt: form.startAt?.toISOString() ?? '',
     });
   };
 
