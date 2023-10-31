@@ -43,7 +43,8 @@ export default function Teams() {
     await myTeams.refetch();
   };
 
-  const handleDelete = async (teamId: string) => {
+  const handleDelete = async (teamId: string, canDelete: boolean) => {
+    if(!canDelete) return notification.onError('Erro', 'Exclua todos os boards antes')
     await modal.confirm({
       title: "Are you sure want to delete this team? All boards will be missed",
       icon: <ExclamationCircleOutlined />,
@@ -72,7 +73,7 @@ export default function Teams() {
         {myTeams.data?.map((team) => (
           <TeamCard
             onEditClick={(e) => setCreateOrUpdate(e)}
-            onDeleteClick={() => handleDelete(team.id)}
+            onDeleteClick={() => handleDelete(team.id, team.boards.length === 0)}
             admin={sessionData?.user as User}
             key={team.id}
             team={team}
@@ -88,7 +89,7 @@ export default function Teams() {
         {teamsAsMember.data?.map((team) => (
           <TeamCard
             onEditClick={(e) => setCreateOrUpdate(e)}
-            onDeleteClick={() => handleDelete(team.id)}
+            onDeleteClick={() => handleDelete(team.id, team.boards.length === 0)}
             admin={team.admin as User}
             key={team.id}
             team={team}

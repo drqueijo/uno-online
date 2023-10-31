@@ -12,6 +12,11 @@ export const teamsRouter = createTRPCRouter({
         },
         include: {
           users: true,
+          boards: {
+            include: {
+              cards: true
+            }
+          }
         },
         orderBy: {
           createdAt: "desc",
@@ -29,6 +34,11 @@ export const teamsRouter = createTRPCRouter({
         },
         include: {
           users: true,
+          boards: {
+            include: {
+              cards: true
+            }
+          }
         },
         orderBy: {
           createdAt: "desc",
