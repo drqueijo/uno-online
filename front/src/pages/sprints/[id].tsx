@@ -8,6 +8,7 @@ import { DATE_FORMAT, isoDate } from "next/utils/date";
 import { useEffect, useState } from "react";
 import { DatePicker } from "antd";
 import { type Card as PrimaCardType, type Status } from "@prisma/client";
+import { z } from "zod";
 import { useNotification } from "next/providers/NotificationProvider";
 
 type CardWithStatus = PrimaCardType & {
@@ -22,6 +23,14 @@ export interface SprintFormState {
 
 const today = dayjs();
 const nextMonth = dayjs().add(1, "M");
+
+const schema = z.object({
+  name: z.string().nonempty("O campo nome precisa ser preenchido"),
+  startAt: z.string({
+    required_error: "o campo start at precisa ser preenchido",
+  }),
+  endAt: z.string({ required_error: "o campo end at precisa ser preenchido" }),
+});
 
 const SPRINT_FORM_INITIAL_STATE: SprintFormState = {
   name: "",
@@ -41,8 +50,8 @@ export const SprintPage: React.FC = ({}) => {
     api.sprints.removeCardFromSprint.useMutation();
   const updateSprint = api.sprints.updateSprint.useMutation();
   const deleteSprint = api.sprints.deleteSprint.useMutation();
-  const notification = useNotification();
   const [form, setForm] = useState<SprintFormState>(SPRINT_FORM_INITIAL_STATE);
+  const notification = useNotification();
 
   useEffect(() => {
     if (!sprint.data) return;
@@ -96,9 +105,9 @@ export const SprintPage: React.FC = ({}) => {
     if (!name) return notification.onError("Error", "Name is required");
     const response = await updateSprint.mutateAsync({
       ...sprint.data!,
-      name,
-      startAt: isoDate(startAt),
-      endAt: isoDate(endAt),
+      ...form,
+      startAt: form.startAt?.toISOString() ?? "",
+      endAt: form.startAt?.toISOString() ?? "",
     });
     if (!response.id)
       return notification.onError("Error", "Error updating sprint");

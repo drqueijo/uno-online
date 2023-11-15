@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 import dayjs, { type Dayjs } from "dayjs";
 import { DATE_FORMAT, formatDate } from "next/utils/date";
 import { useNotification } from "next/providers/NotificationProvider";
+import { z } from "zod";
 
 export interface SprintFormState {
   name: string;
@@ -16,6 +17,14 @@ export interface SprintFormState {
 
 const today = dayjs();
 const nextMonth = dayjs().add(1, "M");
+
+const schema = z.object({
+  name: z.string().nonempty("O campo nome precisa ser preenchido"),
+  startAt: z.string({
+    required_error: "o campo start at precisa ser preenchido",
+  }),
+  endAt: z.string({ required_error: "o campo end at precisa ser preenchido" }),
+});
 
 const SPRINT_FORM_INITIAL_STATE: SprintFormState = {
   name: "",
@@ -29,7 +38,6 @@ export const Sprints: React.FC = () => {
   const sprints = api.sprints.getSprints.useQuery();
   const notification = useNotification();
   const createSprint = api.sprints.createSprint.useMutation();
-
   const isSprintActive = (end: Date) => {
     const endDate = dayjs(end);
     if (today.isAfter(endDate)) return <p className="text-red-600">Finished</p>;
@@ -37,11 +45,20 @@ export const Sprints: React.FC = () => {
   };
 
   const onSubmit = async () => {
-    if (!form.startAt || !form.endAt || !form.name) return;
+    const payload = {
+      ...form,
+      startAt: form.startAt?.toISOString(),
+      endAt: form.endAt?.toISOString(),
+    };
+    const validator = schema.safeParse(payload);
+    if (!validator.success) {
+      const message = validator.error.issues[0]?.message ?? "";
+      return notification.onError("Sprint", message);
+    }
     const response = await createSprint.mutateAsync({
       ...form,
-      startAt: form.startAt.toISOString(),
-      endAt: form.endAt.toISOString(),
+      startAt: form.startAt!.toISOString(),
+      endAt: form.endAt!.toISOString(),
     });
     if (!response.id)
       return notification.onError("Something went wrong", "Please try again");

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Divider, FloatButton, Modal, Button } from "antd";
@@ -23,8 +24,8 @@ const CREATE_OR_UPDATE_INITIAL_VALUE = {
 export default function Teams() {
   const deleteTeam = api.teams.deleteTeam.useMutation();
   const { data: sessionData } = useSession();
-  const notification = useNotification();
   const [modal, contextHolder] = Modal.useModal();
+  const notification = useNotification();
   const [createOrUpdate, setCreateOrUpdate] = useState<CreateOrUpdateProps>(
     CREATE_OR_UPDATE_INITIAL_VALUE
   );
@@ -50,7 +51,9 @@ export default function Teams() {
     await myTeams.refetch();
   };
 
-  const handleDelete = async (teamId: string) => {
+  const handleDelete = async (teamId: string, canDelete: boolean) => {
+    if (!canDelete)
+      return notification.onError("Erro", "Exclua todos os boards antes");
     await modal.confirm({
       title: "Confirm Deletion",
       icon: <ExclamationCircleOutlined />,
@@ -80,7 +83,9 @@ export default function Teams() {
         {myTeams.data?.map((team) => (
           <TeamCard
             onEditClick={(e) => setCreateOrUpdate(e)}
-            onDeleteClick={() => handleDelete(team.id)}
+            onDeleteClick={() =>
+              handleDelete(team.id, team.boards.length === 0)
+            }
             admin={sessionData?.user as User}
             key={team.id}
             team={team}
@@ -96,7 +101,9 @@ export default function Teams() {
         {teamsAsMember.data?.map((team) => (
           <TeamCard
             onEditClick={(e) => setCreateOrUpdate(e)}
-            onDeleteClick={() => handleDelete(team.id)}
+            onDeleteClick={() =>
+              handleDelete(team.id, team.boards.length === 0)
+            }
             admin={team.admin as User}
             key={team.id}
             team={team}
