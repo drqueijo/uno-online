@@ -53,9 +53,9 @@ export const cardsRouter = createTRPCRouter({
         data: {
           title: input.title,
           content: input.content,
-          board: { connect: { id: input.boardId } },
-          status: { connect: { id: input.statusId } },
-          creator: { connect: { id: input.creatorId } },
+          boardId: card.boardId,
+          statusId: card.statusId,
+          creatorId: card.creatorId,
           cardId: card.id,
         },
       });
@@ -87,9 +87,9 @@ export const cardsRouter = createTRPCRouter({
         data: {
           title: input.title,
           content: input.content,
-          board: { connect: { id: card.boardId } },
-          status: { connect: { id: card.statusId } },
-          creator: { connect: { id: card.creatorId } },
+          boardId: card.boardId,
+          statusId: card.statusId,
+          creatorId: card.creatorId,
           cardId: card.id,
         },
       });

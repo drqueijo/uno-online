@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Button, Card, Divider, Input } from "antd";
+import { Button, Card, Divider, FloatButton, Input } from "antd";
+import { SnippetsOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { api } from "next/utils/api";
-import { DATE_FORMAT, isoDate } from "next/utils/date";
+import { DATE_FORMAT } from "next/utils/date";
 import { useEffect, useState } from "react";
 import { DatePicker } from "antd";
 import { type Card as PrimaCardType, type Status } from "@prisma/client";
 import { z } from "zod";
 import { useNotification } from "next/providers/NotificationProvider";
+import * as XLSX from "xlsx";
 
 type CardWithStatus = PrimaCardType & {
   status: Status;
@@ -48,6 +50,7 @@ export const SprintPage: React.FC = ({}) => {
   const addCardToSprintRequest = api.sprints.addCardtoSprint.useMutation();
   const removeFromSprintRequent =
     api.sprints.removeCardFromSprint.useMutation();
+  const generateSpreadSheet = api.sprints.generateSpreadSheet.useMutation();
   const updateSprint = api.sprints.updateSprint.useMutation();
   const deleteSprint = api.sprints.deleteSprint.useMutation();
   const [form, setForm] = useState<SprintFormState>(SPRINT_FORM_INITIAL_STATE);
@@ -120,6 +123,31 @@ export const SprintPage: React.FC = ({}) => {
     await router.push("/sprints");
   };
 
+  const generateRequest = async () => {
+    try {
+      const response = await generateSpreadSheet.mutateAsync({
+        sprintId: id! as string,
+      });
+
+      // Assuming response is JSON data, you need to format it according to your Excel structure
+      const jsonData = response; // Replace this with the actual JSON data
+
+      // Create a new workbook
+      const wb = XLSX.utils.book_new();
+
+      // Create a worksheet
+      const ws = XLSX.utils.json_to_sheet(jsonData as object[]);
+
+      // Add the worksheet to the workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet 1");
+
+      // Save the workbook as an Excel file
+      XLSX.writeFile(wb, `sprint.xlsx`);
+    } catch (error) {
+      console.error("Error generating Excel file:", error);
+    }
+  };
+
   return (
     <div className="flex w-full flex-col p-4">
       <Button
@@ -128,7 +156,7 @@ export const SprintPage: React.FC = ({}) => {
         style={{ backgroundColor: "#ff0000" }}
         onClick={onDeleteSprint}
       >
-        DELETE SPRINT
+        Delete Sprint
       </Button>
       <div className="flex flex-wrap items-end gap-4">
         <label className="flex flex-col gap-2">
@@ -215,6 +243,12 @@ export const SprintPage: React.FC = ({}) => {
           </Card>
         ))}
       </div>
+      <FloatButton
+        onClick={() => generateRequest()}
+        shape="circle"
+        type="primary"
+        icon={<SnippetsOutlined />}
+      />
     </div>
   );
 };

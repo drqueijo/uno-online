@@ -60,7 +60,7 @@ export const sprintsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return await ctx.prisma.card.update({
+      const card = await ctx.prisma.card.update({
         where: {
           id: input.cardId,
         },
@@ -68,6 +68,19 @@ export const sprintsRouter = createTRPCRouter({
           sprintId: input.sprintId,
         },
       });
+
+      await ctx.prisma.cardHistory.create({
+        data: {
+          title: card.title,
+          content: card.content,
+          boardId: card.boardId,
+          statusId: card.statusId,
+          creatorId: card.creatorId,
+          cardId: card.id,
+          sprintId: input.sprintId,
+        },
+      });
+      return card;
     }),
   removeCardFromSprint: protectedProcedure
     .input(
@@ -77,7 +90,7 @@ export const sprintsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return await ctx.prisma.card.update({
+      const card = await ctx.prisma.card.update({
         where: {
           id: input.cardId,
         },
@@ -85,6 +98,19 @@ export const sprintsRouter = createTRPCRouter({
           sprintId: null,
         },
       });
+
+      await ctx.prisma.cardHistory.create({
+        data: {
+          title: card.title,
+          content: card.content,
+          boardId: card.boardId,
+          statusId: card.statusId,
+          creatorId: card.creatorId,
+          cardId: card.id,
+          sprintId: input.sprintId,
+        },
+      });
+      return card;
     }),
   deleteSprint: protectedProcedure
     .input(
@@ -106,5 +132,31 @@ export const sprintsRouter = createTRPCRouter({
           id: input.sprintId,
         },
       });
+    }),
+
+  generateSpreadSheet: protectedProcedure
+    .input(z.object({ sprintId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const cardsHistory = await ctx.prisma.$queryRaw`
+        SELECT 
+          ch.content,
+          ch.title,
+          ch.createdAt,
+          ch.updatedAt,
+          ch.orderIndex,
+          c.title as cardName,
+          u.name as creatorName,
+          s.name as statusName,
+          b.name as boardName
+        FROM CardHistory ch
+        JOIN Card c ON ch.cardId = c.id
+        JOIN User u ON ch.creatorId = u.id
+        JOIN Status s ON ch.statusId = s.id
+        JOIN Board b ON ch.boardId = b.id
+        WHERE ch.sprintId = ${input.sprintId}
+        ORDER BY ch.createdAt ASC
+      `;
+
+      return cardsHistory;
     }),
 });

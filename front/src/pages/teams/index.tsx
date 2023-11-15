@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Divider, FloatButton, Modal, Button } from "antd";
+import { Divider, FloatButton, Modal } from "antd";
 import { useSession } from "next-auth/react";
 import { api } from "next/utils/api";
 import { useState } from "react";
@@ -53,7 +53,7 @@ export default function Teams() {
 
   const handleDelete = async (teamId: string, canDelete: boolean) => {
     if (!canDelete)
-      return notification.onError("Erro", "Exclua todos os boards antes");
+      return notification.onWarning("Error", "Delete all boards first");
     await modal.confirm({
       title: "Confirm Deletion",
       icon: <ExclamationCircleOutlined />,
