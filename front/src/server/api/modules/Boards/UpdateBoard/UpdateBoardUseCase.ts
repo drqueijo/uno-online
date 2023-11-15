@@ -14,6 +14,6 @@ export class UpdateBoardUseCase {
     const validator = UpdateBoardSchema.safeParse(request);
     if (validator.success) entety = await this.boardRepository.update(request);
 
-    return apiResponse(entety, validator, "Board editado com sucesso");
+    return apiResponse(entety, validator, "Board updated");
   }
 }

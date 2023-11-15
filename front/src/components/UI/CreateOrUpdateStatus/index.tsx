@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Button, ColorPicker, Input, Modal } from "antd";
 import { useSession } from "next-auth/react";
+import { useNotification } from "next/providers/NotificationProvider";
 import { api } from "next/utils/api";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 interface CreateOrUpdateCardProps {
   isOpen: boolean;
   onCancel: () => void;
@@ -15,6 +17,17 @@ const FORM_INITIAL_STATE = {
   name: "",
   color: "",
 };
+
+const formSchema = z.object({
+  name: z
+    .string()
+    .min(1, "The name cant be empty")
+    .max(12, "The name cant be longer than 12 characters"),
+  color: z
+    .string()
+    .min(1, "The color cant be empty")
+    .max(12, "The color cant be longer than 12 characters"),
+});
 
 export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
   isOpen,
@@ -33,6 +46,7 @@ export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
     (card) => card.statusId === id
   );
   const session = useSession();
+  const notification = useNotification();
   const [form, setForm] = useState(FORM_INITIAL_STATE);
 
   useEffect(() => {
@@ -46,14 +60,34 @@ export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
   }, [status.data, id]);
 
   const onSubmit = async () => {
-    if (!id && session)
-      await createStatus
-        .mutateAsync({ ...form, boardId })
-        .catch((e) => console.log(e));
+    let responseName = "";
+    const validate = formSchema.safeParse(form);
+    if (!validate.success)
+      return notification.onError(
+        "Form error",
+        validate.error.errors[0]!.message
+      );
+    try {
+      if (!id && session) {
+        const response = await createStatus.mutateAsync({
+          ...form,
+          boardId,
+        });
+        responseName = response.name;
+      }
 
-    if (id && session)
-      await updateStatus.mutateAsync({ statusId: id, ...form });
-
+      if (id && session) {
+        const response = await updateStatus.mutateAsync({
+          statusId: id,
+          ...form,
+        });
+        responseName = response.name;
+      }
+      notification.onSuccess("Status created", responseName);
+    } catch (e) {
+      notification.onError("Something went wrong", "Please try again");
+    }
+    setForm(FORM_INITIAL_STATE);
     await statuses.refetch();
     onOk();
   };

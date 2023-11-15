@@ -12,6 +12,6 @@ export class CreateBoardUseCase {
     const validator = CreateBoardSchema.safeParse(request);
     if (validator.success) entety = await this.boardRepository.create(request);
 
-    return apiResponse(entety, validator, "Board criado com sucesso");
+    return apiResponse(entety, validator, "Board created");
   }
 }

@@ -43,7 +43,7 @@ export const CreateOrUpdate: React.FC<CreateOrUpdateProps> = ({
     if (!id || !board.data) return;
     const { team, name } = board.data;
     setForm({
-      teamId: team.id,
+      teamId: team!.id,
       name,
     });
   }, [board.data, id]);
@@ -51,7 +51,7 @@ export const CreateOrUpdate: React.FC<CreateOrUpdateProps> = ({
   const onCreateBoard = async () => {
     const res = await createBoard.mutateAsync(form);
     if (res.error) {
-      return notification.onError("Erro", res.message);
+      return notification.onError("Error", res.message);
     }
     notification.onSuccess(res.reponse!.name, res.message);
     setForm(FORM_INITIAL_STATE);
@@ -59,14 +59,10 @@ export const CreateOrUpdate: React.FC<CreateOrUpdateProps> = ({
   };
 
   const onUpdateBoard = async () => {
-    if (!id)
-      return notification.onError(
-        "Board",
-        "Precisa selectionar um board valido"
-      );
+    if (!id) return notification.onError("Board", "Select a valid board");
     const res = await updateBoard.mutateAsync({ id, ...form });
     if (res.error) {
-      return notification.onError("Erro", res.message);
+      return notification.onError("Error", res.message);
     }
     notification.onSuccess(res.reponse!.name, res.message);
     setForm(FORM_INITIAL_STATE);

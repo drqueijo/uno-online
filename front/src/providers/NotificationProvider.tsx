@@ -1,6 +1,6 @@
 import React, { type ReactNode, createContext, useContext } from "react";
 import { notification } from "antd";
-// Step 1: Create a new context
+
 export const NotificationContext = createContext({
   onSuccess: (message: string, description: string) => {
     return;
@@ -8,9 +8,11 @@ export const NotificationContext = createContext({
   onError: (message: string, description: string) => {
     return;
   },
+  onWarning: (message: string, description: string) => {
+    return;
+  },
 });
 
-// Step 2: Create the provider component
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [api, contextHolder] = notification.useNotification();
 
@@ -26,13 +28,19 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       description,
     });
   };
+  const onWarning = (message: string, description = "") => {
+    return api.warning({
+      message,
+      description,
+    });
+  };
 
   return (
-    // Step 4: Provide the context value
     <NotificationContext.Provider
       value={{
         onSuccess,
         onError,
+        onWarning,
       }}
     >
       {children}
@@ -41,7 +49,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Step 3: Create a hook to access the context
 export const useNotification = () => {
   return useContext(NotificationContext);
 };

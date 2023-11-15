@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Input, Modal, Select } from "antd";
+
 import { useSession } from "next-auth/react";
+import { useNotification } from "next/providers/NotificationProvider";
 
 import { api } from "next/utils/api";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 
 interface EditModalProps {
   id?: string;
@@ -11,6 +14,11 @@ interface EditModalProps {
   onCancel: () => void;
   onOk: () => void;
 }
+
+const formSchema = z.object({
+  name: z.string().nonempty("The team name cant be empty"),
+  users: z.string().array().nonempty("Fill at least one member in your team"),
+});
 
 const FORM_INITIAL_STATE = {
   name: "",
@@ -26,6 +34,7 @@ const CreateOrUpdate: React.FC<EditModalProps> = ({
   const { data: sessionData } = useSession();
   const team = api.teams.getTeamById.useQuery({ id });
   const [form, setForm] = useState(FORM_INITIAL_STATE);
+  const notification = useNotification();
   const createTeam = api.teams.createTeam.useMutation();
   const updateTeam = api.teams.updateTeam.useMutation();
   const usersRequest = api.users.getUsers.useQuery();
@@ -45,11 +54,31 @@ const CreateOrUpdate: React.FC<EditModalProps> = ({
   }, [team.data, id]);
 
   const onSubmit = async () => {
-    if (!id && sessionData)
-      await createTeam
-        .mutateAsync({ ...form, adminId: sessionData.user.id })
-        .catch((e) => console.log(e));
-    if (id && sessionData) await updateTeam.mutateAsync({ id, ...form });
+    const validate = formSchema.safeParse(form);
+    let responseName = "";
+    if (!validate.success)
+      return notification.onError(
+        "Form error",
+        validate.error.errors[0]!.message
+      );
+
+    try {
+      if (!id && sessionData) {
+        const response = await createTeam.mutateAsync({
+          ...form,
+          adminId: sessionData.user.id,
+        });
+        responseName = response.name;
+      }
+
+      if (id && sessionData) {
+        const response = await updateTeam.mutateAsync({ id, ...form });
+        responseName = response!.name;
+      }
+    } catch (err) {
+      return notification.onError("Error", "Error on create request");
+    }
+    notification.onSuccess("Success", responseName);
     setForm(FORM_INITIAL_STATE);
     onOk();
   };

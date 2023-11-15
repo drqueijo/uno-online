@@ -9,36 +9,11 @@ datasource db {
 }
 
 model Card {
-    id         String        @id @default(cuid())
-    content    String
-    title      String
-    createdAt  DateTime      @default(now())
-    updatedAt  DateTime      @updatedAt
-    history    CardHistory[]
-    creatorId  String
-    creator    User          @relation(fields: [creatorId], references: [id])
-    orderIndex Int           @default(0)
-    statusId   String
-    status     Status        @relation(fields: [statusId], references: [id])
-    boardId    String
-    board      Board         @relation(fields: [boardId], references: [id])
-    sprintId   String?
-    sprint     Sprint?       @relation(fields: [sprintId], references: [id])
-
-    @@index([boardId])
-    @@index([creatorId])
-    @@index([statusId])
-    @@index([sprintId])
-}
-
-model CardHistory {
     id         String   @id @default(cuid())
     content    String
     title      String
     createdAt  DateTime @default(now())
     updatedAt  DateTime @updatedAt
-    cardId     String
-    card       Card     @relation(fields: [cardId], references: [id])
     creatorId  String
     creator    User     @relation(fields: [creatorId], references: [id])
     orderIndex Int      @default(0)
@@ -53,7 +28,29 @@ model CardHistory {
     @@index([creatorId])
     @@index([statusId])
     @@index([sprintId])
-    @@index([cardId])
+}
+
+model CardHistory {
+    id         String   @id @default(cuid())
+    content    String
+    title      String
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+    cardId     String
+    creatorId  String
+    creator    User     @relation(fields: [creatorId], references: [id])
+    orderIndex Int      @default(0)
+    statusId   String
+    status     Status   @relation(fields: [statusId], references: [id])
+    boardId    String
+    board      Board    @relation(fields: [boardId], references: [id])
+    sprintId   String?
+    sprint     Sprint?  @relation(fields: [sprintId], references: [id])
+
+    @@index([boardId])
+    @@index([creatorId])
+    @@index([statusId])
+    @@index([sprintId])
 }
 
 model Status {
@@ -64,8 +61,8 @@ model Status {
     color         String
     Card          Card[]
     cardHistories CardHistory[]
-    boardId       String
-    board         Board         @relation(fields: [boardId], references: [id])
+    boardId       String?
+    board         Board?        @relation(fields: [boardId], references: [id])
 
     @@index([boardId])
 }
@@ -78,8 +75,8 @@ model Board {
     cards         Card[]
     status        Status[]
     cardHistories CardHistory[]
-    teamId        String
-    team          Team          @relation(fields: [teamId], references: [id])
+    teamId        String?
+    team          Team?         @relation(fields: [teamId], references: [id])
 
     @@index([teamId])
 }

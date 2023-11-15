@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "next/server/api/trpc";
-import { Card } from "@prisma/client";
+import { type Card } from "@prisma/client";
 
 export const cardsRouter = createTRPCRouter({
   getCardsByBoardId: protectedProcedure
@@ -56,7 +56,7 @@ export const cardsRouter = createTRPCRouter({
           board: { connect: { id: input.boardId } },
           status: { connect: { id: input.statusId } },
           creator: { connect: { id: input.creatorId } },
-          card: { connect: { id: card.id } },
+          cardId: card.id,
         },
       });
       return card;
@@ -90,7 +90,7 @@ export const cardsRouter = createTRPCRouter({
           board: { connect: { id: card.boardId } },
           status: { connect: { id: card.statusId } },
           creator: { connect: { id: card.creatorId } },
-          card: { connect: { id: card.id } },
+          cardId: card.id,
         },
       });
       return card;

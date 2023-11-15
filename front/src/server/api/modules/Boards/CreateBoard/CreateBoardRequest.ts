@@ -6,6 +6,6 @@ export interface CreateBoardRequest {
 }
 
 export const CreateBoardSchema = z.object({
-  name: z.string().nonempty("O campo de nome precisa ser preenchido"),
-  teamId: z.string().nonempty("O campo de time precisa ser preenchido"),
+  name: z.string().nonempty("The name cant be empty"),
+  teamId: z.string().nonempty("The team cant be empty"),
 });

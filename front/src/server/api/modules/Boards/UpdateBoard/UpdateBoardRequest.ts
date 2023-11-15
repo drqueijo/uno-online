@@ -8,12 +8,6 @@ export type UpdateBoardRequest = {
 
 export const UpdateBoardSchema = z.object({
   id: z.string(),
-  name: z
-    .string()
-    .nonempty("O campo de nome precisa ser preenchido")
-    .optional(),
-  teamId: z
-    .string()
-    .nonempty("O campo de time precisa ser preenchido")
-    .optional(),
+  name: z.string().nonempty("The name cant be empty").optional(),
+  teamId: z.string().nonempty("the team cant be empty").optional(),
 });

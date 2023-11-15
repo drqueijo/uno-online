@@ -4,9 +4,9 @@ import { type AppType } from "next/app";
 import { api } from "next/utils/api";
 import "next/styles/globals.css";
 import MainLayout from "next/components/layouts/main";
+import LoginPage from "next/components/layouts/login";
 
-
-const MyApp: AppType<{ session: Session | null}> = ({
+const MyApp: AppType<{ session: Session | null }> = ({
   Component,
   pageProps: { session, ...pageProps },
 }) => {

@@ -54,19 +54,11 @@ export default function BoardCard({
           )}
         </div>
       }
-      className="h-fit w-72"
+      className="h-fit w-72 bg-blue-100"
     >
-      <p className="flex items-center justify-between text-sm font-bold">
-        {admin?.name}{" "}
-        <Avatar src={admin?.image} style={{ backgroundColor: "#fde3cf" }}>
-          {admin?.name?.charAt(0)}
-        </Avatar>
-      </p>
-      <Divider />
       <p className="flex items-center justify-between text-sm font-bold">
         {board.cards.length} active issues
       </p>
-      <Divider />
       <Link
         className="ml-auto flex items-end justify-end"
         href={`/board/${board.id}`}

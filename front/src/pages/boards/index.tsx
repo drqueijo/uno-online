@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Divider, FloatButton, Modal } from "antd";
+import { Divider, FloatButton, Modal, Button } from "antd";
 import { useSession } from "next-auth/react";
 import { api } from "next/utils/api";
 import CreateOrUpdate from "next/components/UI/CreateOrUpdateBoard";
@@ -38,22 +38,23 @@ export const Boards: React.FC = ({}) => {
 
   const deleteRequest = async (boardId: string) => {
     const res = await deleteTeam.mutateAsync({ boardId });
-    if (res.error) return notification.onError("Erro ao deletar", res.message);
+    if (res.error) return notification.onError("Error", res.message);
     notification.onSuccess("Board", res.message);
     await boards.refetch();
   };
 
   const handleDelete = async (boardId: string, isEmpty: boolean) => {
     if (!isEmpty)
-      return notification.onError(
-        "Erro ao deletar",
-        "Remova todos os cards antes de deletar"
+      return notification.onWarning(
+        "Error",
+        "Remove all cards before deleting."
       );
     await modal.confirm({
-      title: "Are you sure want to delete this board? All cards will be missed",
+      title: "Confirm Deletion",
       icon: <ExclamationCircleOutlined />,
-      content: "",
-      okText: "Confirm deletion",
+      content:
+        "Are you sure you want to delete this board? All cards will be removed.",
+      okText: "Confirm Deletion",
       cancelText: "Cancel",
       onOk: () => deleteRequest(boardId),
     });
@@ -67,17 +68,23 @@ export const Boards: React.FC = ({}) => {
         onOk={() => onCloseModal()}
         onCancel={() => setCreateOrUpdate(CREATE_OR_UPDATE_INITIAL_VALUE)}
       />
-      <div className="mb-8 text-lg font-bold text-blue-500">Boards</div>
       <Divider />
+      <div className=" text-2xl font-bold text-blue-400">Your Boards</div>
       {boards.data?.map((team) => (
         <>
-          <div key={team.id} className="mb-8 text-lg font-bold text-blue-500">
+          <div
+            key={team.id}
+            className="mb-4 mt-8 text-lg font-bold text-blue-400"
+          >
             {team.name}
           </div>
-
-          <div className="flex flex-wrap gap-4">
-            {team.boards.map((board) => (
-              <>
+          {team.boards.length === 0 ? (
+            <div className="italic text-gray-500">
+              No boards available in this team.
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-4">
+              {team.boards.map((board) => (
                 <BoardCard
                   onEditClick={(e) => setCreateOrUpdate(e)}
                   onDeleteClick={() =>
@@ -88,10 +95,9 @@ export const Boards: React.FC = ({}) => {
                   board={board}
                   isAdmin={sessionData?.user.id === team.adminId}
                 />
-              </>
-            ))}
-          </div>
-          <Divider />
+              ))}
+            </div>
+          )}
         </>
       ))}
       <FloatButton

@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Button, Input, Modal, Select } from "antd";
 import { useSession } from "next-auth/react";
+import { useNotification } from "next/providers/NotificationProvider";
 import { api } from "next/utils/api";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 interface CreateOrUpdateCardProps {
   isOpen: boolean;
   onCancel: () => void;
@@ -18,6 +20,12 @@ const FORM_INITIAL_STATE = {
   statusId: "",
 };
 
+const formSchema = z.object({
+  title: z.string().nonempty("The name cant be empty"),
+  content: z.string(),
+  statusId: z.string().nonempty("The status cant be empty"),
+});
+
 export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
   isOpen,
   onCancel,
@@ -32,7 +40,7 @@ export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
   const updateCard = api.cards.updateCard.useMutation();
   const deleteCard = api.cards.deleteCard.useMutation();
   const session = useSession();
-
+  const notification = useNotification();
   const statusOptions = status.data?.map((s) => ({
     label: s.name,
     value: s.id,
@@ -52,17 +60,41 @@ export const CreateOrUpdateCard: React.FC<CreateOrUpdateCardProps> = ({
   }, [card.data, id, statusId, status.data]);
 
   const onSubmit = async () => {
-    if (!id && session)
-      await createCard
-        .mutateAsync({ ...form, boardId, creatorId: session.data?.user.id })
-        .catch((e) => console.log(e));
-    if (id && session) await updateCard.mutateAsync({ id, ...form });
+    let responseName = "";
+    const validate = formSchema.safeParse(form);
+    if (!validate.success)
+      return notification.onError(
+        "Form error",
+        validate.error.errors[0]!.message
+      );
+    try {
+      if (!id && session) {
+        const response = await createCard.mutateAsync({
+          ...form,
+          boardId,
+          creatorId: session.data?.user.id,
+        });
+        if (response?.id) responseName = response.title;
+      }
+
+      if (id && session) {
+        const response = await updateCard.mutateAsync({ id, ...form });
+        if (response?.id) responseName = response.title;
+      }
+    } catch (error) {
+      return notification.onError("Error", "Something went wrong");
+    }
+    if (responseName) notification.onSuccess("Card created", responseName);
+
     onOk();
   };
 
   const onDelete = async () => {
-    if (!id) return;
-    await deleteCard.mutateAsync({ id });
+    if (!id) return notification.onError("Error", "No id found");
+    const response = await deleteCard.mutateAsync({ id });
+    if (response.id) notification.onSuccess("Card deleted", response.title);
+    if (!response.id)
+      notification.onError("Error deleting card", response.title);
     onOk();
   };
   const title = id ? "Update card" : "Create card";

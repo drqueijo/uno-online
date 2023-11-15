@@ -54,7 +54,7 @@ export default function TeamCard({
           )}
         </div>
       }
-      className="h-fit w-72"
+      className="h-fit w-72 bg-blue-100"
     >
       <p className="flex items-center justify-between text-sm font-bold">
         {admin?.name}
@@ -65,11 +65,11 @@ export default function TeamCard({
       <Divider />
       {team.users.map((user) => (
         <p
-          className="flex items-center justify-between text-sm"
+          className="flex items-center justify-between pt-1 text-sm"
           key={user.email}
         >
           {user.name}
-          <Avatar src={user.image} style={{ backgroundColor: "#fde3cf" }}>
+          <Avatar src={user.image} style={{ backgroundColor: "#d4cffd" }}>
             {user.name?.charAt(0)}
           </Avatar>
         </p>

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { Divider, FloatButton, Modal } from "antd";
+import { Divider, FloatButton, Modal, Button } from "antd";
 import { useSession } from "next-auth/react";
 import { api } from "next/utils/api";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import { ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { type User } from "@prisma/client";
 import CreateOrUpdate from "next/components/UI/CreateOrUpdateTeam";
 import TeamCard from "next/components/UI/TeamCard";
+import { useNotification } from "next/providers/NotificationProvider";
 
 export interface CreateOrUpdateProps {
   id?: string;
@@ -22,6 +23,7 @@ const CREATE_OR_UPDATE_INITIAL_VALUE = {
 export default function Teams() {
   const deleteTeam = api.teams.deleteTeam.useMutation();
   const { data: sessionData } = useSession();
+  const notification = useNotification();
   const [modal, contextHolder] = Modal.useModal();
   const [createOrUpdate, setCreateOrUpdate] = useState<CreateOrUpdateProps>(
     CREATE_OR_UPDATE_INITIAL_VALUE
@@ -35,16 +37,26 @@ export default function Teams() {
   });
 
   const deleteRequest = async (teamId: string) => {
-    await deleteTeam.mutateAsync({ id: teamId, userId: sessionData?.user.id });
+    try {
+      const request = await deleteTeam.mutateAsync({
+        id: teamId,
+        userId: sessionData?.user.id,
+      });
+      notification.onSuccess("Deleted", request!.name);
+    } catch (e) {
+      notification.onError("Error", `The delete request failed`);
+    }
+
     await myTeams.refetch();
   };
 
   const handleDelete = async (teamId: string) => {
     await modal.confirm({
-      title: "Are you sure want to delete this team? All boards will be missed",
+      title: "Confirm Deletion",
       icon: <ExclamationCircleOutlined />,
-      content: "",
-      okText: "Confirm deletion",
+      content:
+        "Are you sure you want to delete this team? All boards will be removed.",
+      okText: "Confirm Deletion",
       cancelText: "Cancel",
       onOk: () => deleteRequest(teamId),
     });
@@ -63,7 +75,7 @@ export default function Teams() {
         onOk={() => onCloseModal()}
         onCancel={() => setCreateOrUpdate(CREATE_OR_UPDATE_INITIAL_VALUE)}
       />
-      <div className="mb-8 text-lg font-bold text-blue-500">Your teams</div>
+      <div className="mb-8 text-2xl font-bold text-blue-400">Your Teams</div>
       <div className="flex flex-wrap gap-4">
         {myTeams.data?.map((team) => (
           <TeamCard
@@ -77,8 +89,8 @@ export default function Teams() {
         ))}
       </div>
       <Divider />
-      <div className="mb-8 text-lg font-bold text-blue-500">
-        Teams that you are member
+      <div className="mb-8 text-2xl font-bold text-blue-400">
+        {"Teams You're a Member Of"}
       </div>
       <div className="flex flex-wrap gap-4">
         {teamsAsMember.data?.map((team) => (
