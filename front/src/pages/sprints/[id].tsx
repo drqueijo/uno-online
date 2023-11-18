@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Button, Card, Divider, FloatButton, Input } from "antd";
-import { SnippetsOutlined } from "@ant-design/icons";
+import { SnippetsOutlined, CloudDownloadOutlined } from "@ant-design/icons";
 import dayjs, { type Dayjs } from "dayjs";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -123,28 +123,41 @@ export const SprintPage: React.FC = ({}) => {
     await router.push("/sprints");
   };
 
-  const generateRequest = async () => {
+  const generateRequest = async (downloadType: "json" | "excel") => {
     try {
       const response = await generateSpreadSheet.mutateAsync({
         sprintId: id! as string,
       });
 
-      // Assuming response is JSON data, you need to format it according to your Excel structure
-      const jsonData = response; // Replace this with the actual JSON data
+      if (downloadType === "json") {
+        // Download as JSON
+        const jsonData = response; // Replace this with the actual JSON data
+        const jsonBlob = new Blob([JSON.stringify(jsonData)], {
+          type: "application/json",
+        });
+        const jsonUrl = URL.createObjectURL(jsonBlob);
+        const link = document.createElement("a");
+        link.href = jsonUrl;
+        link.download = "sprint.json";
+        link.click();
+      } else if (downloadType === "excel") {
+        // Download as Excel
+        const jsonData = response; // Replace this with the actual JSON data
 
-      // Create a new workbook
-      const wb = XLSX.utils.book_new();
+        // Create a new workbook
+        const wb = XLSX.utils.book_new();
 
-      // Create a worksheet
-      const ws = XLSX.utils.json_to_sheet(jsonData as object[]);
+        // Create a worksheet
+        const ws = XLSX.utils.json_to_sheet(jsonData as object[]);
 
-      // Add the worksheet to the workbook
-      XLSX.utils.book_append_sheet(wb, ws, "Sheet 1");
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(wb, ws, "Sheet 1");
 
-      // Save the workbook as an Excel file
-      XLSX.writeFile(wb, `sprint.xlsx`);
+        // Save the workbook as an Excel file
+        XLSX.writeFile(wb, `sprint.xlsx`);
+      }
     } catch (error) {
-      console.error("Error generating Excel file:", error);
+      console.error("Error generating file:", error);
     }
   };
 
@@ -243,12 +256,20 @@ export const SprintPage: React.FC = ({}) => {
           </Card>
         ))}
       </div>
-      <FloatButton
-        onClick={() => generateRequest()}
-        shape="circle"
-        type="primary"
-        icon={<SnippetsOutlined />}
-      />
+      <FloatButton.Group>
+        <FloatButton
+          onClick={() => generateRequest("excel")}
+          shape="circle"
+          type="primary"
+          icon={<SnippetsOutlined />}
+        />
+        <FloatButton
+          onClick={() => generateRequest("json")}
+          shape="circle"
+          type="primary"
+          icon={<CloudDownloadOutlined />}
+        />
+      </FloatButton.Group>
     </div>
   );
 };

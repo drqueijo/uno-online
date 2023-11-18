@@ -10,7 +10,7 @@ export default function Home() {
           Welcome back, {session!.user.name}!
         </h1>
         <p className="mb-6 text-lg">
-          Explore your personalized dashboard and manage your tasks
+          Explore and manage your tasks
           effortlessly.
         </p>
       </>
