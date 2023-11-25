@@ -14,6 +14,10 @@ import CardDroppable from "next/components/UI/CardDroppable";
 import { PlusOutlined } from "@ant-design/icons";
 import CreateOrUpdateCard from "next/components/UI/CreateOrUpdateCard";
 import CreateOrUpdateStatus from "next/components/UI/CreateOrUpdateStatus";
+import { useSession } from "next-auth/react";
+import { FloatButton } from "antd";
+import { SnippetsOutlined, CloudDownloadOutlined } from "@ant-design/icons";
+import * as XLSX from "xlsx";
 
 interface StatusWithCards extends Status {
   cards: Card[];
@@ -28,14 +32,17 @@ const MODAL_INITIAL_STATE = {
 export const BoardPanel: React.FC = () => {
   const router = useRouter();
   const { id } = router.query;
-
+  const { data: sessionData } = useSession();
   const board = api.cards.getCardsByBoardId.useQuery({
     boardId: typeof id === "string" ? id : "",
   });
+  const generateSpreadSheet = api.boards.generateSpreadSheet.useMutation();
   const moveCards = api.cards.moveCards.useMutation();
   const [cardModal, setCardModal] = useState(MODAL_INITIAL_STATE);
   const [statusModal, setStatusModal] = useState(MODAL_INITIAL_STATE);
   const [columns, setColumns] = useState<StatusWithCards[]>([]);
+
+  const isAdmin = board.data?.team?.adminId === sessionData?.user.id;
 
   useEffect(() => {
     if (!board.data) return;
@@ -47,6 +54,44 @@ export const BoardPanel: React.FC = () => {
     });
     setColumns(mountedColumns);
   }, [board.data]);
+
+  const generateRequest = async (downloadType: "json" | "excel") => {
+    try {
+      const response = await generateSpreadSheet.mutateAsync({
+        boardId: id! as string,
+      });
+
+      if (downloadType === "json") {
+        // Download as JSON
+        const jsonData = response; // Replace this with the actual JSON data
+        const jsonBlob = new Blob([JSON.stringify(jsonData)], {
+          type: "application/json",
+        });
+        const jsonUrl = URL.createObjectURL(jsonBlob);
+        const link = document.createElement("a");
+        link.href = jsonUrl;
+        link.download = "sprint.json";
+        link.click();
+      } else if (downloadType === "excel") {
+        // Download as Excel
+        const jsonData = response; // Replace this with the actual JSON data
+
+        // Create a new workbook
+        const wb = XLSX.utils.book_new();
+
+        // Create a worksheet
+        const ws = XLSX.utils.json_to_sheet(jsonData as object[]);
+
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(wb, ws, "Sheet 1");
+
+        // Save the workbook as an Excel file
+        XLSX.writeFile(wb, `sprint.xlsx`);
+      }
+    } catch (error) {
+      console.error("Error generating file:", error);
+    }
+  };
 
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -217,6 +262,22 @@ export const BoardPanel: React.FC = () => {
           </div>
         </div>
       </DragDropContext>
+      {isAdmin && (
+        <FloatButton.Group>
+          <FloatButton
+            onClick={() => generateRequest("excel")}
+            shape="circle"
+            type="primary"
+            icon={<SnippetsOutlined />}
+          />
+          <FloatButton
+            onClick={() => generateRequest("json")}
+            shape="circle"
+            type="primary"
+            icon={<CloudDownloadOutlined />}
+          />
+        </FloatButton.Group>
+      )}
     </div>
   );
 };

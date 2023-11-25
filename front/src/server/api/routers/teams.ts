@@ -14,9 +14,9 @@ export const teamsRouter = createTRPCRouter({
           users: true,
           boards: {
             include: {
-              cards: true
-            }
-          }
+              cards: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
@@ -36,9 +36,9 @@ export const teamsRouter = createTRPCRouter({
           users: true,
           boards: {
             include: {
-              cards: true
-            }
-          }
+              cards: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
@@ -151,5 +151,29 @@ export const teamsRouter = createTRPCRouter({
           },
         },
       });
+    }),
+  generateSpreadSheet: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const cardsHistory = await ctx.prisma.$queryRaw`
+        SELECT 
+          ch.content,
+          ch.title,
+          ch.createdAt,
+          ch.updatedAt,
+          ch.orderIndex,
+          c.title as cardName,
+          u.name as creatorName,
+          s.name as statusName,
+          b.name as boardName
+        FROM CardHistory ch
+        JOIN Card c ON ch.cardId = c.id
+        JOIN User u ON ch.creatorId = u.id
+        JOIN Status s ON ch.statusId = s.id
+        JOIN Board b ON ch.boardId = b.id
+        WHERE ch.creatorId = ${input.userId}
+        ORDER BY ch.createdAt ASC
+      `;
+      return cardsHistory;
     }),
 });

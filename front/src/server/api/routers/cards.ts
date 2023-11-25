@@ -15,6 +15,7 @@ export const cardsRouter = createTRPCRouter({
         include: {
           cards: true,
           status: true,
+          team: true,
         },
       });
     }),
@@ -105,7 +106,7 @@ export const cardsRouter = createTRPCRouter({
         })
       )
     )
-    .mutation(({ input, ctx }) => {
+    .mutation(async ({ input, ctx }) => {
       const updatePromises = input.map((cardData) => {
         return ctx.prisma.card.update({
           where: {
@@ -118,7 +119,23 @@ export const cardsRouter = createTRPCRouter({
         });
       });
 
-      return Promise.all(updatePromises);
+      const cardResults = await Promise.all(updatePromises);
+
+      const newHistory = cardResults.map((cardHistory) => {
+        return ctx.prisma.cardHistory.create({
+          data: {
+            title: cardHistory.title,
+            content: cardHistory.content,
+            boardId: cardHistory.boardId,
+            statusId: cardHistory.statusId,
+            creatorId: cardHistory.creatorId,
+            cardId: cardHistory.id,
+          },
+        });
+      });
+      await Promise.all(newHistory);
+
+      return updatePromises;
     }),
   deleteCard: protectedProcedure
     .input(

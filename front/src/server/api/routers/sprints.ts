@@ -156,7 +156,6 @@ export const sprintsRouter = createTRPCRouter({
         WHERE ch.sprintId = ${input.sprintId}
         ORDER BY ch.createdAt ASC
       `;
-
       return cardsHistory;
     }),
 });

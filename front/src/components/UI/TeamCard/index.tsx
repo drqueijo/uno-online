@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { type Team, type User } from "@prisma/client";
-import { Avatar, Card, Divider } from "antd";
+import { Avatar, Button, Card, Divider, Dropdown } from "antd";
 import Link from "next/link";
 import { type CreateOrUpdateProps } from "next/pages/teams";
-
+import { SnippetsOutlined, CloudDownloadOutlined } from "@ant-design/icons";
+import { api } from "next/utils/api";
+import * as XLSX from "xlsx";
 type TeamWithUsers = Team & {
   users: User[];
 };
@@ -24,6 +26,70 @@ export default function TeamCard({
   admin,
   isAdmin,
 }: TeamCardProps) {
+  const generateSpreadSheet = api.teams.generateSpreadSheet.useMutation();
+
+  const generateRequest = async (
+    downloadType: "json" | "excel",
+    userId: string
+  ) => {
+    try {
+      const response = await generateSpreadSheet.mutateAsync({
+        userId,
+      });
+
+      if (downloadType === "json") {
+        // Download as JSON
+        const jsonData = response; // Replace this with the actual JSON data
+        const jsonBlob = new Blob([JSON.stringify(jsonData)], {
+          type: "application/json",
+        });
+        const jsonUrl = URL.createObjectURL(jsonBlob);
+        const link = document.createElement("a");
+        link.href = jsonUrl;
+        link.download = "sprint.json";
+        link.click();
+      } else if (downloadType === "excel") {
+        // Download as Excel
+        const jsonData = response; // Replace this with the actual JSON data
+
+        // Create a new workbook
+        const wb = XLSX.utils.book_new();
+
+        // Create a worksheet
+        const ws = XLSX.utils.json_to_sheet(jsonData as object[]);
+
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(wb, ws, "Sheet 1");
+
+        // Save the workbook as an Excel file
+        XLSX.writeFile(wb, `sprint.xlsx`);
+      }
+    } catch (error) {
+      console.error("Error generating file:", error);
+    }
+  };
+
+  const getMenuItems = (userId: string) => {
+    return [
+      {
+        key: "1",
+        label: (
+          <p onClick={() => generateRequest("excel", userId)}>
+            <SnippetsOutlined />
+          </p>
+        ),
+      },
+      {
+        key: "2",
+        label: (
+          <p onClick={() => generateRequest("json", userId)}>
+            <CloudDownloadOutlined />
+          </p>
+        ),
+      },
+    ];
+  };
+
   return (
     <Card
       key={team.id}
@@ -69,9 +135,21 @@ export default function TeamCard({
           key={user.email}
         >
           {user.name}
-          <Avatar src={user.image} style={{ backgroundColor: "#d4cffd" }}>
-            {user.name?.charAt(0)}
-          </Avatar>
+          {isAdmin ? (
+            <Dropdown
+              menu={{ items: getMenuItems(user.id) }}
+              placement="topRight"
+              className="cursor-pointer"
+            >
+              <Avatar src={user.image} style={{ backgroundColor: "#d4cffd" }}>
+                {user.name?.charAt(0)}
+              </Avatar>
+            </Dropdown>
+          ) : (
+            <Avatar src={user.image} style={{ backgroundColor: "#d4cffd" }}>
+              {user.name?.charAt(0)}
+            </Avatar>
+          )}
         </p>
       ))}
       <Divider />
